@@ -28,7 +28,11 @@ const studentSchema = new mongoose.Schema({
     isAccountVerified: {
         type: Boolean,
         default: false,
-    }
+    },
+    role: {
+        type: String,
+        default: 'student',
+    },
 });
 
 const Student = mongoose.model('Student', studentSchema);

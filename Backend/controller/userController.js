@@ -61,6 +61,9 @@ const register = async (req, res) => {
 
     const allowedDomains = ['nitkkr.ac.in'];
     const emailDomain = email.split('@')[1];
+    const emailWithoutDomain = email.split('@')[0];
+    const isOnlyNumbers = /^\d+$/.test(emailWithoutDomain);
+    if(emailWithoutDomain)
     if (!allowedDomains.includes(emailDomain)) {
         return res.status(400).json({ error: 'Only NIT Kurukshetra emails are allowed' });
     }
@@ -70,7 +73,13 @@ const register = async (req, res) => {
         if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new studentModel({ name, rollNo, email, password: hashedPassword });
+        let role;
+        if(isOnlyNumbers){
+            role = student;
+        } else{
+            role = teacher;
+        }
+        const user = new studentModel({ name, rollNo, email, password: hashedPassword , role});
         await user.save();
 
         console.log('user', user)
