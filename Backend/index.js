@@ -4,6 +4,8 @@ const port = 3000
 const cookieparser = require('cookie-parser')
 app.use(cookieparser())
 const userRoutes = require('./router/userRoutes');
+const path = require('path');
+const dataRoutes = require('./router/dataRoute');
 require('dotenv').config();
 
 const server = require('http').createServer(app)
@@ -19,6 +21,9 @@ app.use(cors({
 }));
 
 app.use('/', userRoutes);
+app.use('/', dataRoutes);
+
+app.use(express.static(path.join(__dirname, 'public')))
 
 server.listen(port, () => {
   console.log(`Server listening on ${port}`);

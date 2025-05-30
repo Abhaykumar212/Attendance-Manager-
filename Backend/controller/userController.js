@@ -1,13 +1,61 @@
-const express = require('express');
 const studentModel = require('../model/studentModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const transporter = require('../services/mailservice')
+
+const sendVerificationOTP = async (req, res, sendResponse = true, email, name) => {
+  try {
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const expireAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Save OTP to the user’s DB record
+    await studentModel.findOneAndUpdate(
+      { email },
+      {
+        verifyOTP: otp.toString(),
+        verifyOTPExpireAt: expireAt
+      }
+    );
+
+    const verifyMessage = {
+      from: `"Attendance Manager Support" <${process.env.EMAIL}>`,
+      to: email,
+      subject: '🔐 Verify Your Attendance Manager Account',
+      html: `
+        <html>
+        <body>
+          <div style="font-family: Arial; padding: 20px;">
+            <h2>🔒 Email Verification</h2>
+            <p>Hi ${name},</p>
+            <p>Your OTP is: <strong style="font-size: 22px; color: #800000;">${otp}</strong></p>
+            <p>This code is valid for 10 minutes.</p>
+            <p>— Attendance Manager Team</p>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const sendMailPromise = require('util').promisify(transporter.sendMail.bind(transporter));
+    await sendMailPromise(verifyMessage);
+
+    if (sendResponse) {
+      return res.json({ message: "OTP sent to your email", success: true });
+    }
+  } catch (err) {
+    console.error('OTP Send Error:', err);
+    if (sendResponse) {
+      return res.status(500).json({ error: 'Failed to send verification email' });
+    }
+  }
+};
 
 const register = async (req, res) => {
-    const { name, rollno, email, password } = req.body;
+    const { name, rollNo, email, password } = req.body;
+    console.log('req',req.body)
 
-    if (!name || !rollno || !email || !password) {
+    if (!name || !rollNo || !email || !password) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -22,8 +70,10 @@ const register = async (req, res) => {
         if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new studentModel({ name, email, password: hashedPassword });
+        const user = new studentModel({ name, rollNo, email, password: hashedPassword });
         await user.save();
+
+        console.log('user', user)
 
         const token = jwt.sign({ email, isAdmin: user.isAdmin }, process.env.JWT_SECRET);
         res.cookie('token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' });
@@ -127,6 +177,9 @@ const register = async (req, res) => {
             .catch((error) => { console.log("Email error:", error) });
 
         console.log('Registered!');
+
+        await sendVerificationOTP(req, res, false,email,name);
+
         return res.status(202).json({ message: "Successful registration" });
     } catch (err) {
         console.error(err);
@@ -134,5 +187,39 @@ const register = async (req, res) => {
     }
 };
 
+const verifyemail = async (req, res) => {
+  const { otp } = req.body;
 
-module.exports = { register };
+  if (!otp) return res.status(400).json({ error: 'OTP is required' });
+
+  try {
+    // const user = await studentModel.findOne({ email });
+
+    // if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (req.userData.isAccountVerified) {
+      return res.status(400).json({ error: 'Account already verified' });
+    }
+
+    if (req.userData.verifyOTP !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    if (Date.now() > req.userData.verifyOTPExpireAt) {
+      return res.status(400).json({ error: 'OTP expired' });
+    }
+
+    // Mark as verified
+    req.userData.isAccountVerified = true;
+    req.userData.verifyOTP = '';
+    req.userData.verifyOTPExpireAt = 0;
+    await req.userData.save();
+
+    return res.status(200).json({ message: 'Account verified successfully', success: true });
+  } catch (err) {
+    console.error('Verification error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+module.exports = { register, verifyemail, sendVerificationOTP };

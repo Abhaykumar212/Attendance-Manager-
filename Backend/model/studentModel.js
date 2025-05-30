@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
-    fullName: {
+    name: {
         type: String,
         required: true
     },
@@ -10,7 +10,7 @@ const studentSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    collegeEmail: {
+    email: {
         type: String,
         required: true,
         unique: true
@@ -18,6 +18,16 @@ const studentSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    verifyOTP: {
+        type: String,
+    },
+    verifyOTPExpireAt: {
+        type: Number,
+    },
+    isAccountVerified: {
+        type: Boolean,
+        default: false,
     }
 });
 
