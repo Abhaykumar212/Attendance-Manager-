@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Mail, CheckCircle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -47,9 +47,11 @@ const VerifyMail = () => {
     try {
       setLoading(true);
       const backend_url = import.meta.env.VITE_BACKEND_URL;
-      const { data } = await axios.post(`${backend_url}/api/auth/verify-otp`, {
+      const { data } = await axios.post(`${backend_url}/verifyemail`, {
         otp: otp.join('')
       });
+
+      console.log(data);
 
       if (!data.error) {
         toast.success('✅ Email verified successfully!', {

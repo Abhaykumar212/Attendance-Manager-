@@ -27,7 +27,8 @@ const Register = () => {
         ...(isStudent && { rollNo })
       };
       
-      const { data } = await axios.post(`${backend_url}/api/auth/register`, userData);
+      const { data } = await axios.post(`${backend_url}/register`, userData);
+      console.log(data);
       if (!data.error) {
         setIsLoggedIn(true);
         getUserData();
