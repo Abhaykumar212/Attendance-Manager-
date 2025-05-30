@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import React from "react";
 axios.defaults.withCredentials = true; // always provide the coookies with the request
 
 export const AppContext = createContext();
