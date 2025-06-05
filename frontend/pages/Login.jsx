@@ -16,7 +16,7 @@ const Login = () => {
     try {
       e.preventDefault();
       const backend_url = import.meta.env.VITE_BACKEND_URL;
-      const { data } = await axios.post(`${backend_url}/api/auth/login`, { email, password });
+      const { data } = await axios.post(`${backend_url}/login`, { email, password });
       
       if (!data.error) {
         setIsLoggedIn(true);
