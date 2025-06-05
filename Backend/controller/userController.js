@@ -1,21 +1,19 @@
 const studentModel = require('../model/studentModel');
+const profModel = require('../model/profModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const transporter = require('../services/mailservice')
+const transporter = require('../services/mailservice');
 
-const sendVerificationOTP = async (req, res, sendResponse = true, email, name) => {
+const sendVerificationOTP = async (req, res, sendResponse = true, email, name, role) => {
   try {
-    const otp = Math.floor(100000 + Math.random() * 900000);
-    const expireAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expireAt = Date.now() + 10 * 60 * 1000;
 
-    // Save OTP to the user’s DB record
-    await studentModel.findOneAndUpdate(
+    const userModel = role === 'teacher' ? profModel : studentModel;
+
+    await userModel.findOneAndUpdate(
       { email },
-      {
-        verifyOTP: otp.toString(),
-        verifyOTPExpireAt: expireAt
-      }
+      { verifyOTP: otp, verifyOTPExpireAt: expireAt }
     );
 
     const verifyMessage = {
@@ -23,17 +21,13 @@ const sendVerificationOTP = async (req, res, sendResponse = true, email, name) =
       to: email,
       subject: '🔐 Verify Your Attendance Manager Account',
       html: `
-        <html>
-        <body>
-          <div style="font-family: Arial; padding: 20px;">
-            <h2>🔒 Email Verification</h2>
-            <p>Hi ${name},</p>
-            <p>Your OTP is: <strong style="font-size: 22px; color: #800000;">${otp}</strong></p>
-            <p>This code is valid for 10 minutes.</p>
-            <p>— Attendance Manager Team</p>
-          </div>
-        </body>
-        </html>
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>🔒 Email Verification</h2>
+          <p>Hi ${name},</p>
+          <p>Your OTP is: <strong style="font-size: 22px; color: #800000;">${otp}</strong></p>
+          <p>This code is valid for 10 minutes.</p>
+          <p>— Attendance Manager Team</p>
+        </div>
       `
     };
 
@@ -52,177 +46,191 @@ const sendVerificationOTP = async (req, res, sendResponse = true, email, name) =
 };
 
 const register = async (req, res) => {
-    const { name, rollNo, email, password } = req.body;
-    console.log('req',req.body)
+  const { name, rollNo, email, password } = req.body;
 
-    if (!name || !rollNo || !email || !password) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
+  if (!name || !email || !password || (!email.split('@')[0].match(/^\d+$/) && !rollNo)) {
+    return res.status(400).json({ error: 'All required fields must be filled correctly' });
+  }
 
-    const allowedDomains = ['nitkkr.ac.in'];
-    const emailDomain = email.split('@')[1];
-    const emailWithoutDomain = email.split('@')[0];
-    const isOnlyNumbers = /^\d+$/.test(emailWithoutDomain);
-    if(emailWithoutDomain)
-    if (!allowedDomains.includes(emailDomain)) {
-        return res.status(400).json({ error: 'Only NIT Kurukshetra emails are allowed' });
-    }
+  const allowedDomains = ['nitkkr.ac.in'];
+  const emailDomain = email.split('@')[1];
+  if (!allowedDomains.includes(emailDomain)) {
+    return res.status(400).json({ error: 'Only NIT Kurukshetra emails are allowed' });
+  }
 
-    try {
-        const existingUser = await studentModel.findOne({ email });
-        if (existingUser) return res.status(400).json({ error: 'User already exists' });
+  const isStudent = /^\d+$/.test(email.split('@')[0]);
+  const role = isStudent ? 'student' : 'teacher';
+  const model = isStudent ? studentModel : profModel;
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        let role;
-        if(isOnlyNumbers){
-            role = student;
-        } else{
-            role = teacher;
-        }
-        const user = new studentModel({ name, rollNo, email, password: hashedPassword , role});
-        await user.save();
+  try {
+    const existing = await model.findOne({ email });
+    if (existing) return res.status(400).json({ error: 'User already exists' });
 
-        console.log('user', user)
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-        const token = jwt.sign({ email, isAdmin: user.isAdmin }, process.env.JWT_SECRET);
-        res.cookie('token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' });
+    const userData = isStudent
+      ? { name, email, password: hashedPassword, role, rollNo }
+      : { name, email, password: hashedPassword, role };
 
-        const welcomeMessage = {
-            from: `"Attendance Manager Support" <${process.env.EMAIL}>`,
-            to: email,
-            subject: '📋 Welcome to Attendance Manager!',
-            html: `
-                <html>
-                <head>
-                    <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+    const newUser = new model(userData);
+    await newUser.save();
 
-                        body {
-                            font-family: 'Poppins', sans-serif;
-                            background: #f4f4f4;
-                            color: #333;
-                            text-align: center;
-                            padding: 40px 0;
-                        }
+    const token = jwt.sign({ email, role }, process.env.JWT_SECRET);
+    res.cookie('token', token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    });
 
-                        .container {
-                            max-width: 450px;
-                            margin: auto;
-                            padding: 25px;
-                            border-radius: 15px;
-                            background: white;
-                            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-                            animation: fadeIn 1.5s ease-in-out;
-                        }
+    const welcomeMessage = {
+      from: `"Attendance Manager Support" <${process.env.EMAIL}>`,
+      to: email,
+      subject: '📋 Welcome to Attendance Manager!',
+      html: `
+    <html>
+      <head>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+          body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f6f9fc;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            animation: slideFade 0.5s ease-out;
+          }
+          @keyframes slideFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          h2 {
+            color: #004aad;
+            margin-bottom: 10px;
+          }
+          p {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+          }
+          .highlight {
+            color: #f39c12;
+            font-weight: 600;
+          }
+          .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #004aad;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s ease;
+          }
+          .btn:hover {
+            background: #003580;
+          }
+          .footer {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>📋 Welcome to Attendance Manager, ${name}!</h2>
+          <p>We’re excited to have you on board. Your Attendance Manager account is ready to help you track attendance, view academic reports, and stay organized.</p>
+          <p>Click below to access your dashboard:</p>
+          <a href="${process.env.FRONTEND_URL}" class="btn">Open Dashboard</a>
+          <div class="footer">
+            <p>Need help? Contact support anytime.</p>
+            <p>— The Attendance Manager Team</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+    };
 
-                        @keyframes fadeIn {
-                            from { opacity: 0; transform: translateY(-10px); }
-                            to { opacity: 1; transform: translateY(0); }
-                        }
 
-                        h2 {
-                            font-size: 24px;
-                            margin-bottom: 15px;
-                            color: #28a745;
-                            text-shadow: 0px 0px 10px rgba(40, 167, 69, 0.2);
-                        }
+    transporter.sendMail(welcomeMessage).catch((err) => {
+      console.error('Welcome email failed:', err.message);
+    });
 
-                        .greeting {
-                            font-size: 18px;
-                            color: #555;
-                            margin-bottom: 15px;
-                        }
+    await sendVerificationOTP(req, res, false, email, name, role);
+    return res.status(202).json({ message: "Successful registration" });
 
-                        .highlight {
-                            color: #ffc107;
-                            font-weight: bold;
-                        }
+  } catch (err) {
+    console.error('Register error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
-                        .footer {
-                            font-size: 12px;
-                            color: #777;
-                            margin-top: 20px;
-                        }
+const login = async (req, res) => {
+  const { email, password } = req.body;
 
-                        .btn {
-                            display: inline-block;
-                            margin-top: 15px;
-                            padding: 12px 25px;
-                            background: #28a745;
-                            color: white;
-                            font-weight: bold;
-                            border-radius: 8px;
-                            text-decoration: none;
-                            transition: 0.3s;
-                            box-shadow: 0px 0px 10px rgba(40, 167, 69, 0.2);
-                        }
+  if (!email || !password) return res.status(400).json({ error: 'All fields are required' });
 
-                        .btn:hover {
-                            background: #218838;
-                            transform: scale(1.05);
-                            box-shadow: 0px 0px 15px rgba(33, 136, 56, 0.5);
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h2>📋 Welcome to Attendance Manager, ${name}!</h2>
-                        <p class="greeting">We're thrilled to have you onboard. Managing your class attendance just got a whole lot easier!</p>
-                        <p>Track attendance, view reports, and stay on top of your academic progress.</p>
-                        <a href="${process.env.FRONTEND_URL}" class="btn">Go to Dashboard</a>
-                        <div class="footer">
-                            <p>Stay organized, stay ahead. 📈</p>
-                            <p><strong>The Attendance Manager Team</strong></p>
-                            <p>If this wasn't you, feel free to ignore this email.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `,
-        };
+  try {
+    const isStudent = /^\d+@/.test(email);
+    const model = isStudent ? studentModel : profModel;
 
-        transporter.sendMail(welcomeMessage)
-            .then(() => { console.log("Welcome email sent!") })
-            .catch((error) => { console.log("Email error:", error) });
+    const user = await model.findOne({ email });
+    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
 
-        console.log('Registered!');
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
-        await sendVerificationOTP(req, res, false,email,name);
+    const token = jwt.sign({ email, role: user.role }, process.env.JWT_SECRET);
+    res.cookie('token', token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    });
 
-        return res.status(202).json({ message: "Successful registration" });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
+    return res.status(200).json({ message: 'Login successful' });
+
+  } catch (err) {
+    console.error('Login error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 const verifyemail = async (req, res) => {
   const { otp } = req.body;
-
   if (!otp) return res.status(400).json({ error: 'OTP is required' });
 
   try {
-    // const user = await studentModel.findOne({ email });
+    const user = req.userData;
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // if (!user) return res.status(404).json({ error: 'User not found' });
-
-    if (req.userData.isAccountVerified) {
+    if (user.isAccountVerified) {
       return res.status(400).json({ error: 'Account already verified' });
     }
 
-    if (req.userData.verifyOTP !== otp) {
+    if (user.verifyOTP !== otp) {
       return res.status(400).json({ error: 'Invalid OTP' });
     }
 
-    if (Date.now() > req.userData.verifyOTPExpireAt) {
+    if (Date.now() > user.verifyOTPExpireAt) {
       return res.status(400).json({ error: 'OTP expired' });
     }
 
-    // Mark as verified
-    req.userData.isAccountVerified = true;
-    req.userData.verifyOTP = '';
-    req.userData.verifyOTPExpireAt = 0;
-    await req.userData.save();
+    user.isAccountVerified = true;
+    user.verifyOTP = '';
+    user.verifyOTPExpireAt = 0;
+    await user.save();
 
     return res.status(200).json({ message: 'Account verified successfully', success: true });
   } catch (err) {
@@ -231,4 +239,9 @@ const verifyemail = async (req, res) => {
   }
 };
 
-module.exports = { register, verifyemail, sendVerificationOTP };
+module.exports = {
+  register,
+  login,
+  verifyemail,
+  sendVerificationOTP
+};
