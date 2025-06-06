@@ -6,6 +6,7 @@ app.use(cookieparser())
 const userRoutes = require('./router/userRoutes');
 const path = require('path');
 const dataRoutes = require('./router/dataRoute');
+const studentRoute = require('./router/studentRoute');
 require('dotenv').config();
 
 const server = require('http').createServer(app)
@@ -22,6 +23,7 @@ app.use(cors({
 
 app.use('/', userRoutes);
 app.use('/', dataRoutes);
+app.use('/api/students', studentRoute);
 
 app.use(express.static(path.join(__dirname, 'public')))
 
@@ -35,5 +37,5 @@ mongoose.connect('mongodb://127.0.0.1:27017/attendanceDB')
     console.log('Connected to MongoDB locally');
 })
 .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
+    console.error('MongoDB connection error:', err);
 });
