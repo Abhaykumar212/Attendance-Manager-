@@ -8,6 +8,7 @@ import VerifyMail from "../pages/VerifyMail"
 import Login from "../pages/Login"
 import Home from "../pages/Home"
 import Phome from "../pages/Phome"
+import Add_Attendacee from "../pages/Add_Attendance"
 
 export default function App(){
     return (
@@ -20,6 +21,7 @@ export default function App(){
                 <Route path="/register" element={<Register/>} />
                 <Route path="/verifymail" element={<VerifyMail/>} />
                 <Route path="/login" element={<Login/>} />
+                <Route path="/add-attendance" element={<Add_Attendacee/>} />
             </Routes>
         </Router>
     )
