@@ -1,7 +1,7 @@
 const getUserData = async (req, res) => {
     try {
         const user = req.userData;
-        if(user.role === "teacher"){
+        if(user.role === "professor"){
             return res.json({
                 success: true,
                 userData: {

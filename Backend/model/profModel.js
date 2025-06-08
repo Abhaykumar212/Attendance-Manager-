@@ -26,7 +26,8 @@ const ProfSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        required: true
+        required: true,
+        default : 'professor'
     },
 })
 

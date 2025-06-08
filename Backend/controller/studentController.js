@@ -21,6 +21,7 @@ const getStudents = async (req, res) => {
 
 const getStudentProfile = async (req, res) => {
     try {
+        console.log(req.userData)
         const studentRoll =  req.userData.rollNo.toString();
         const student = await studentAttendance.findOne({ studentRollNumber: studentRoll });
 
