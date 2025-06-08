@@ -1,34 +1,14 @@
-import React, { useMemo, useState, useContext, useEffect } from "react";
-import { AppContext } from "../context/Appcontext";
+import React, { useMemo, useState } from "react";
 import { Search, BookOpen, X } from "lucide-react";
+import { attendanceRecord } from "../dummyData/data.js";
 
 export default function Home() {
-  const { userData } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const [studentData, setStudentData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStudent = async () => {
-      if (!userData?.studentRollNumber) return;
-      try {
-        const res = await fetch(`http://localhost:3000/api/students/me`, {
-          credentials: "include",
-        });
-        const data = await res.json();
-        setStudentData(data.user);
-      } catch (error) {
-        console.error("Error fetching student:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStudent();
-  }, [userData?.studentRollNumber]);
+  // Hardcoded student data
+  const studentData = attendanceRecord[0]; // Using first student from dummy data
 
   const attendanceStats = useMemo(() => {
     if (!studentData?.attendanceRecord) return [];
@@ -68,33 +48,6 @@ export default function Home() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center animate-pulse">
-          <div className="flex justify-center mb-4 space-x-2">
-            <div className="w-3 h-3 bg-[#800000] rounded-full" />
-            <div className="w-3 h-3 bg-[#800000]/70 rounded-full" />
-            <div className="w-3 h-3 bg-[#800000]/40 rounded-full" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#800000]">Loading...</h1>
-          <p className="text-gray-600 mt-2">Please wait while we fetch your data.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!studentData || !studentData.studentName) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-          <h1 className="text-2xl font-bold text-[#800000]">Student Not Found</h1>
-          <p className="text-gray-600 mt-2">Please check your credentials and try again.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 relative">

@@ -16,7 +16,7 @@ export default function App(){
             <Routes>
 
                 {/* <Route path="/home" element={<Home/>}></Route> */}
-                <Route path="/students/:rollNo" element={<Home />} />
+                <Route path="/home" element={<Home />} />
                 <Route path="/phome" element={<Phome/>}></Route>
                 <Route path="/register" element={<Register/>} />
                 <Route path="/verifymail" element={<VerifyMail/>} />
