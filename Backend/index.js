@@ -7,6 +7,7 @@ const userRoutes = require('./router/userRoutes');
 const path = require('path');
 const dataRoutes = require('./router/dataRoute');
 const studentRoute = require('./router/studentRoute');
+const subjectRoute = require('./router/subjectRoute');
 const db = require('./db/db');
 require('dotenv').config();
 db.connect;
@@ -26,6 +27,7 @@ app.use(cors({
 app.use('/', userRoutes);
 app.use('/', dataRoutes);
 app.use('/api/students', studentRoute);
+app.use('/', subjectRoute);
 
 app.use(express.static(path.join(__dirname, 'public')))
 

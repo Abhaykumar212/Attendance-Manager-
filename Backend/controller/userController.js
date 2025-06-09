@@ -256,6 +256,19 @@ const attendanceStoreInDB = async (req, res) => {
   }
 };
 
+const createSubject = async (req, res) => {
+  try {
+    const { subjectName, subjectCode } = req.body;
+    const subject = new subjectModel({ subjectName, subjectCode });
+    await subject.save();
+    res.status(201).json(subject);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+
+
 module.exports = {
   register,
   login,
