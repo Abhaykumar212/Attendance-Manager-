@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronRight, AlertCircle, ArrowLeft, Loader2, User, BookOpen, Calendar, GraduationCap } from 'lucide-react';
+import axios from 'axios';
 
 const YEARS = [1, 2, 3, 4];
 const BRANCHES = ["CSE", "ECE", "ME", "EE", "CE"];
@@ -14,7 +15,7 @@ export default function Add_Attendance() {
   // Step tracking
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Step 1 form data
   const [formData, setFormData] = useState({
     year: "",
@@ -31,10 +32,10 @@ export default function Add_Attendance() {
 
   // Step 2 attendance data
   const [attendanceData, setAttendanceData] = useState([]);
-  
+
   // Step 3 confirmation
   const [showConfirmation, setShowConfirmation] = useState(false);
-  
+
   // Handle Step 1 form submission
   const handleStep1Submit = () => {
     // Basic validation
@@ -42,20 +43,20 @@ export default function Add_Attendance() {
       alert('Please fill in all fields');
       return;
     }
-    
+
     const start = parseInt(formData.initialRoll);
     const end = parseInt(formData.finalRoll);
-    
+
     if (start > end) {
       alert('Initial roll number cannot be greater than final roll number');
       return;
     }
-    
+
     // Check if we need to update attendance data based on changes
-    const shouldUpdateAttendance = !previousFormData || 
+    const shouldUpdateAttendance = !previousFormData ||
       previousFormData.initialRoll !== formData.initialRoll ||
       previousFormData.finalRoll !== formData.finalRoll;
-    
+
     const shouldClearAttendance = !previousFormData ||
       previousFormData.year !== formData.year ||
       previousFormData.branch !== formData.branch ||
@@ -75,7 +76,7 @@ export default function Add_Attendance() {
       // Update attendance data for roll range changes
       const currentRolls = attendanceData.map(s => s.rollNumber);
       const newAttendance = [];
-      
+
       for (let roll = start; roll <= end; roll++) {
         const existingStudent = attendanceData.find(s => s.rollNumber === roll);
         newAttendance.push({
@@ -85,15 +86,15 @@ export default function Add_Attendance() {
       }
       setAttendanceData(newAttendance);
     }
-    
+
     setPreviousFormData({ ...formData });
     setCurrentStep(2);
   };
 
   // Handle attendance toggle
   const handleAttendanceToggle = (rollNumber) => {
-    const newData = attendanceData.map(student => 
-      student.rollNumber === rollNumber 
+    const newData = attendanceData.map(student =>
+      student.rollNumber === rollNumber
         ? { ...student, status: !student.status }
         : student
     );
@@ -103,7 +104,7 @@ export default function Add_Attendance() {
   // Handle Step 2 submission
   const handleStep2Submit = () => {
     const unmarkedCount = attendanceData.filter(student => student.status === null).length;
-    
+
     if (unmarkedCount > 0) {
       setShowConfirmation(true);
     } else {
@@ -120,29 +121,32 @@ export default function Add_Attendance() {
   // Handle final submission
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       const { dateString, day } = getCurrentDate();
       const selectedSubject = SUBJECTS.find(s => s.code === formData.subject);
-      
+
       const records = attendanceData.map(student => ({
-        profName: formData.profName,
-        studentRoll: student.rollNumber,
+        professorName: formData.profName, 
+        studentRollNumber: student.rollNumber,
         status: student.status ? "present" : "absent",
         date: dateString,
         day: day,
-        subject: selectedSubject.name,
+        subjectName: selectedSubject.name, 
         subjectCode: selectedSubject.code,
         branch: formData.branch,
         year: parseInt(formData.year)
       }));
 
-      console.log("Final Attendance Records:", records);
+
+      // console.log("Final Attendance Records:", records);
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/attendance`, records);
+      console.log("API Response:", response.data);
       // Here you would normally make the API call
-      
+
       // Reset form after successful submission
       setFormData({
         year: "",
@@ -156,7 +160,7 @@ export default function Add_Attendance() {
       setPreviousFormData(null);
       setAttendanceData([]);
       setCurrentStep(1);
-      
+
     } catch (error) {
       console.error("Error submitting attendance:", error);
     } finally {
@@ -238,8 +242,8 @@ export default function Add_Attendance() {
           value={formData.subject}
           onChange={(e) => {
             const selectedSubject = SUBJECTS.find(s => s.code === e.target.value);
-            setFormData(prev => ({ 
-              ...prev, 
+            setFormData(prev => ({
+              ...prev,
               subject: e.target.value,
               subjectName: selectedSubject?.name || ""
             }));
@@ -365,23 +369,21 @@ export default function Add_Attendance() {
           <div
             key={student.rollNumber}
             onClick={() => handleAttendanceToggle(student.rollNumber)}
-            className={`p-4 rounded-lg border cursor-pointer transition-all transform hover:scale-[1.02] ${
-              student.status === null
+            className={`p-4 rounded-lg border cursor-pointer transition-all transform hover:scale-[1.02] ${student.status === null
                 ? 'bg-gray-50 border-gray-200'
                 : student.status
-                ? 'bg-green-50 border-green-200'
-                : 'bg-red-50 border-red-200'
-            }`}
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+              }`}
           >
             <div className="flex items-center justify-between">
               <span className="font-medium">Roll No: {student.rollNumber}</span>
-              <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                student.status === null
+              <span className={`px-2 py-1 rounded-full text-sm font-medium ${student.status === null
                   ? 'bg-gray-200 text-gray-800'
                   : student.status
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-              }`}>
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
                 {student.status === null ? 'Unmarked' : student.status ? 'Present' : 'Absent'}
               </span>
             </div>
@@ -402,7 +404,7 @@ export default function Add_Attendance() {
     const presentCount = attendanceData.filter(s => s.status === true).length;
     const absentCount = attendanceData.length - presentCount;
     const selectedSubject = SUBJECTS.find(s => s.code === formData.subject);
-    
+
     return (
       <div className="space-y-6">
         {/* Class Details Card */}
@@ -465,7 +467,7 @@ export default function Add_Attendance() {
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
+            <div
               className="bg-[#800000] h-3 rounded-full transition-all duration-500"
               style={{ width: `${attendanceData.length > 0 ? (presentCount / attendanceData.length) * 100 : 0}%` }}
             ></div>
@@ -481,9 +483,8 @@ export default function Add_Attendance() {
             {attendanceData.map((student) => (
               <div key={student.rollNumber} className="p-4 flex justify-between items-center">
                 <span className="font-medium">Roll No: {student.rollNumber}</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  student.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${student.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
                   {student.status ? 'Present' : 'Absent'}
                 </span>
               </div>
@@ -521,7 +522,7 @@ export default function Add_Attendance() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-gray-100">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[#800000]/5 blur-3xl pointer-events-none" />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
@@ -568,7 +569,7 @@ export default function Add_Attendance() {
               <h3 className="text-lg font-medium text-gray-900">Unmarked Students</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              {attendanceData.filter(s => s.status === null).length} students are unmarked. 
+              {attendanceData.filter(s => s.status === null).length} students are unmarked.
               They will be marked as present by default. Do you want to proceed?
             </p>
             <div className="flex gap-3">

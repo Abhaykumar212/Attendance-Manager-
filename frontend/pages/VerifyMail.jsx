@@ -51,7 +51,7 @@ const VerifyMail = () => {
         otp: otp.join('')
       });
 
-      console.log(data);
+      // console.log(data);
 
       if (!data.error) {
         toast.success('✅ Email verified successfully!', {

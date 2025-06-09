@@ -28,7 +28,7 @@ const Register = () => {
       };
       
       const { data } = await axios.post(`${backend_url}/register`, userData);
-      console.log(data);
+      // console.log(data);
       if (!data.error) {
         setIsLoggedIn(true);
         getUserData();

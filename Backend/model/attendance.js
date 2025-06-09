@@ -37,8 +37,8 @@ const attendanceSchema = new Schema({
     year : {
         required: true,
         type:Number 
-    }
-})
+    },
+}, {timestamps: true})
 
 const attendanceModel = model('Attendance', attendanceSchema);
 module.exports = attendanceModel;

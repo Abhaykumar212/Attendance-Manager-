@@ -1,5 +1,6 @@
 const studentModel = require('../model/studentModel');
 const profModel = require('../model/profModel');
+const attendanceModel = require('../model/attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('../services/mailservice');
@@ -239,9 +240,26 @@ const verifyemail = async (req, res) => {
   }
 };
 
+const attendanceStoreInDB = async (req, res) => {
+  try {
+    const records = req.body;
+
+    if (!Array.isArray(records)) {
+      return res.status(400).json({ error: 'Expected an array of attendance records' });
+    }
+
+    const saved = await attendanceModel.insertMany(records);
+    return res.status(201).json(saved);
+  } catch (error) {
+    console.error('Error storing attendance:', error);
+    res.status(500).json({ error: 'Server error while saving attendance' });
+  }
+};
+
 module.exports = {
   register,
   login,
   verifyemail,
-  sendVerificationOTP
+  sendVerificationOTP,
+  attendanceStoreInDB
 };

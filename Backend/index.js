@@ -7,7 +7,9 @@ const userRoutes = require('./router/userRoutes');
 const path = require('path');
 const dataRoutes = require('./router/dataRoute');
 const studentRoute = require('./router/studentRoute');
+const db = require('./db/db');
 require('dotenv').config();
+db.connect;
 
 const server = require('http').createServer(app)
 app.use(express.json());

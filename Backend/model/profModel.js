@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { verify } = require('../services/mailservice');
 
 const ProfSchema = new mongoose.Schema({
     name: {

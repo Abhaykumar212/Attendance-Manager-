@@ -1,4 +1,4 @@
-const studentAttendance = require('../model/studentAttendance');
+const studentAttendance = require('../model/attendance');
 
 const createStudent = async (req, res) => {
     try {
@@ -21,7 +21,7 @@ const getStudents = async (req, res) => {
 
 const getStudentProfile = async (req, res) => {
     try {
-        console.log(req.userData)
+        // console.log(req.userData)
         const studentRoll =  req.userData.rollNo.toString();
         const student = await studentAttendance.findOne({ studentRollNumber: studentRoll });
 
