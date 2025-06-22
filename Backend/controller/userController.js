@@ -56,7 +56,7 @@ const register = async (req, res) => {
   const allowedDomains = ['nitkkr.ac.in'];
   const emailDomain = email.split('@')[1];
   if (!allowedDomains.includes(emailDomain)) {
-    return res.status(400).json({ error: 'Only NIT Kurukshetra emails are allowed' });
+    return res.status(400).json({success: false, error: 'Only NIT Kurukshetra emails are allowed' });
   }
 
   const isStudent = /^\d+$/.test(email.split('@')[0]);
@@ -65,7 +65,7 @@ const register = async (req, res) => {
 
   try {
     const existing = await model.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'User already exists' });
+    if (existing) return res.status(400).json({message: "User already exists", success: false, error: 'User already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -169,7 +169,7 @@ const register = async (req, res) => {
     });
 
     await sendVerificationOTP(req, res, false, email, name, role);
-    return res.status(202).json({ message: "Successful registration" });
+    return res.status(202).json({ success: true, message: "Successful registration" });
 
   } catch (err) {
     console.error('Register error:', err);

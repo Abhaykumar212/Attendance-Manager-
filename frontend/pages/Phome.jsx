@@ -1,6 +1,17 @@
 import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord, professorsData } from "../dummyData/data.js";
-import { BookOpen, UserCheck, ClipboardList, Search, X } from "lucide-react";
+import { 
+  BookOpen, 
+  UserCheck, 
+  ClipboardList, 
+  Search, 
+  X, 
+  BarChart2, 
+  Users,
+  Calendar,
+  FileText
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Phome() {
@@ -33,7 +44,6 @@ export default function Phome() {
     return { totalClasses, subjectStats };
   }, [professorData]);
 
-  // Get attendance data for a specific class
   const getClassAttendance = (date, subject) => {
     return attendanceRecord
       .map(student => ({
@@ -46,7 +56,6 @@ export default function Phome() {
       .sort((a, b) => a.rollNumber - b.rollNumber);
   };
 
-  // Calculate student attendance statistics
   const getStudentStats = (studentRollNo) => {
     const student = attendanceRecord.find(s => s.studentRollNumber === parseInt(studentRollNo));
     if (!student) return null;
@@ -78,7 +87,6 @@ export default function Phome() {
     };
   };
 
-  // Handle student search
   const handleStudentSearch = (e) => {
     e.preventDefault();
     const studentData = getStudentStats(studentRoll);
@@ -91,252 +99,360 @@ export default function Phome() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100">
-      {/* Glow Effect */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[#800000]/5 blur-3xl pointer-events-none" />
+    <div className="dark bg-[#0a0a1a] min-h-screen text-gray-100 overflow-hidden relative">
+      {/* Animated Background Gradient */}
+      <motion.div 
+        initial={{ backgroundPosition: '0% 50%' }}
+        animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+        transition={{ 
+          duration: 15, 
+          repeat: Infinity, 
+          ease: "linear" 
+        }}
+        className="absolute inset-0 bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] opacity-50 z-0"
+      />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Welcome Header */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-[#800000]/10 rounded-full flex items-center justify-center">
-              <BookOpen className="text-[#800000] h-7 w-7" />
-            </div>
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+        >
+          <div className="flex items-center gap-6">
+            <motion.div 
+              whileHover={{ scale: 1.1 }}
+              className="w-20 h-20 bg-[#4a4e69]/20 rounded-full flex items-center justify-center"
+            >
+              <BookOpen className="text-[#6a7fdb] h-10 w-10" />
+            </motion.div>
             <div>
-              <h1 className="text-3xl font-bold text-[#800000]">
+              <h1 className="text-4xl font-bold text-[#6a7fdb] tracking-tight">
                 Welcome, {professorData?.professorName || "Professor"}
               </h1>
-              <p className="text-gray-600">{professorEmail}</p>
+              <p className="text-gray-400 text-lg">{professorEmail}</p>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/add-attendance")}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-[#800000] text-white rounded-lg hover:bg-[#800000]/90 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-[#6a7fdb] text-white rounded-lg hover:bg-[#5a6fdb] transition-colors"
             >
               <UserCheck className="h-5 w-5" />
               <span>Add Attendance</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowStudentModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-[#800000] text-[#800000] rounded-lg hover:bg-[#800000]/10 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-[#2c2c4a] text-gray-200 rounded-lg hover:bg-[#3c3c5a] transition-colors"
             >
               <ClipboardList className="h-5 w-5" />
               <span>Review Attendance</span>
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Class Summary */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Class Summary</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-              <h3 className="text-lg font-semibold text-[#800000] mb-2">Total Classes</h3>
-              <p className="text-3xl font-bold text-gray-900">{classStats.totalClasses}</p>
-            </div>
-            {classStats.subjectStats.map((stat, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                <h3 className="text-lg font-semibold text-[#800000] mb-2">{stat.subject}</h3>
-                <p className="text-3xl font-bold text-gray-900">{stat.count}</p>
-                <p className="text-sm text-gray-600">classes taken</p>
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Class Summary</h2>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="bg-[#2c2c4a] p-2 rounded-full"
+            >
+              <BarChart2 className="text-[#6a7fdb] h-6 w-6" />
+            </motion.div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <Calendar className="text-[#6a7fdb] h-6 w-6" />
+                <span className="text-xl font-bold text-[#6a7fdb]">{classStats.totalClasses}</span>
               </div>
+              <h3 className="text-gray-400 text-sm">Total Classes</h3>
+            </motion.div>
+            {classStats.subjectStats.map((stat, index) => (
+              <motion.div 
+                key={index}
+                whileHover={{ scale: 1.05 }}
+                className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <FileText className="text-[#6a7fdb] h-6 w-6" />
+                  <span className="text-xl font-bold text-[#6a7fdb]">{stat.count}</span>
+                </div>
+                <h3 className="text-gray-400 text-sm">{stat.subject} Classes</h3>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Detailed Class Summary */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Detailed Class Summary</h2>
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.4 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Detailed Class Summary</h2>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="bg-[#2c2c4a] p-2 rounded-full"
+            >
+              <Users className="text-[#6a7fdb] h-6 w-6" />
+            </motion.div>
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-[#3c3c5a]">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Subject
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  {["Subject", "Date", "Actions"].map((header) => (
+                    <th 
+                      key={header} 
+                      className="px-6 py-3 bg-[#2c2c4a] text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
                 {professorData?.completeClassData.map((cls, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {cls.subject}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {cls.date}
-                    </td>
+                  <motion.tr 
+                    key={index}
+                    whileHover={{ backgroundColor: '#2c2c4a' }}
+                    className="hover:bg-[#2c2c4a] transition-colors duration-200"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">{cls.subject}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{cls.date}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setSelectedClass(cls)}
-                        className="text-[#800000] hover:text-[#800000]/70"
+                        className="text-[#6a7fdb] hover:text-[#6a7fdb]/70"
                       >
                         View Attendance
-                      </button>
+                      </motion.button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Student Search Modal */}
-      {showStudentModal && (
-        <div className="fixed inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Review Student Attendance</h2>
-              <button
+      {/* Modals */}
+      <AnimatePresence>
+        {/* Student Search Modal */}
+        {showStudentModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 max-w-md w-full relative shadow-2xl"
+            >
+              <button 
                 onClick={() => setShowStudentModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#2c2c4a] transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="h-6 w-6 text-gray-400" />
               </button>
-            </div>
-            <form onSubmit={handleStudentSearch}>
-              <div className="mb-4">
-                <label htmlFor="rollNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                  Student Roll Number
-                </label>
-                <input
-                  type="text"
-                  id="rollNumber"
-                  value={studentRoll}
-                  onChange={(e) => setStudentRoll(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#800000]/20"
-                  placeholder="Enter roll number"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2 bg-[#800000] text-white rounded-lg hover:bg-[#800000]/90 transition-colors"
-              >
-                Search
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Class Attendance Modal */}
-      {selectedClass && (
-        <div className="fixed inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Class Attendance - {selectedClass.subject} ({selectedClass.date})
-              </h2>
-              <button
-                onClick={() => setSelectedClass(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Roll Number
-                    </th>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student Name
-                    </th>
-                    <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {getClassAttendance(selectedClass.date, selectedClass.subject).map((student, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {student.rollNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {student.studentName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            student.status === "present"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {student.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Student Attendance Summary Modal */}
-      {selectedStudent && (
-        <div className="fixed inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  {selectedStudent.student.studentName}
-                </h2>
-                <p className="text-gray-600">Roll Number: {selectedStudent.student.studentRollNumber}</p>
-              </div>
-              <button
-                onClick={() => setSelectedStudent(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedStudent.stats.map((stat, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-lg font-semibold text-[#800000] mb-2">{stat.subject}</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Present:</span>
-                      <span className="text-sm font-medium text-green-600">
-                        {stat.presentPercentage}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Classes Attended:</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {stat.presentClasses}/{stat.totalClasses}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#800000] rounded-full"
-                        style={{ width: `${stat.presentPercentage}%` }}
-                      />
-                    </div>
+              
+              <h2 className="text-2xl font-bold text-[#6a7fdb] mb-6">Search Student</h2>
+              
+              <form onSubmit={handleStudentSearch} className="space-y-6">
+                <div>
+                  <label htmlFor="studentRoll" className="block text-gray-400 mb-2">
+                    Student Roll Number
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+                    <input
+                      id="studentRoll"
+                      type="text"
+                      value={studentRoll}
+                      onChange={(e) => setStudentRoll(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-[#2c2c4a] border border-[#3c3c5a] rounded-lg 
+                        focus:outline-none focus:ring-2 focus:ring-[#6a7fdb]/50 
+                        text-gray-200 placeholder-gray-500 transition-all"
+                      placeholder="Enter student roll number"
+                      required
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  type="submit"
+                  className="w-full py-3.5 bg-[#6a7fdb] text-white rounded-lg 
+                    font-semibold hover:bg-[#5a6fdb] focus:outline-none 
+                    focus:ring-2 focus:ring-[#6a7fdb]/30 transition-all"
+                >
+                  Search Student
+                </motion.button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Class Attendance Modal */}
+        {selectedClass && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 max-w-2xl w-full relative shadow-2xl"
+            >
+              <button 
+                onClick={() => setSelectedClass(null)}
+                className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#2c2c4a] transition-colors"
+              >
+                <X className="h-6 w-6 text-gray-400" />
+              </button>
+              
+              <h2 className="text-2xl font-bold text-[#6a7fdb] mb-2">
+                {selectedClass.subject} - {selectedClass.date}
+              </h2>
+              <p className="text-gray-400 mb-6">Attendance Records</p>
+              
+              <div className="overflow-y-auto max-h-[60vh]">
+                <table className="min-w-full divide-y divide-[#3c3c5a]">
+                  <thead className="sticky top-0 bg-[#2c2c4a]">
+                    <tr>
+                      {["Roll No.", "Student Name", "Status"].map((header) => (
+                        <th 
+                          key={header} 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
+                    {getClassAttendance(selectedClass.date, selectedClass.subject).map((student, index) => (
+                      <tr key={index} className="hover:bg-[#2c2c4a] transition-colors duration-200">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">
+                          {student.rollNumber}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          {student.studentName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            student.status === "present" 
+                              ? "bg-green-900/50 text-green-400" 
+                              : "bg-red-900/50 text-red-400"
+                          }`}>
+                            {student.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Student Attendance Modal */}
+        {selectedStudent && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 max-w-2xl w-full relative shadow-2xl"
+            >
+              <button 
+                onClick={() => setSelectedStudent(null)}
+                className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#2c2c4a] transition-colors"
+              >
+                <X className="h-6 w-6 text-gray-400" />
+              </button>
+              
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-[#4a4e69]/20 rounded-full flex items-center justify-center">
+                  <UserCheck className="text-[#6a7fdb] h-8 w-8" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-[#6a7fdb]">
+                    {selectedStudent.student.studentName}
+                  </h2>
+                  <p className="text-gray-400">Roll No: {selectedStudent.student.studentRollNumber}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <h3 className="text-xl font-semibold text-[#6a7fdb]">Attendance Statistics</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {selectedStudent.stats.map((stat, index) => (
+                    <div key={index} className="bg-[#2c2c4a] rounded-xl p-4 border border-[#3c3c5a]">
+                      <h4 className="text-lg font-medium text-gray-200 mb-3">{stat.subject}</h4>
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Total Classes:</span>
+                          <span className="font-medium">{stat.totalClasses}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Present:</span>
+                          <span className="text-green-400 font-medium">
+                            {stat.presentClasses} ({stat.presentPercentage}%)
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Absent:</span>
+                          <span className="text-red-400 font-medium">
+                            {stat.totalClasses - stat.presentClasses} ({stat.absentPercentage}%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

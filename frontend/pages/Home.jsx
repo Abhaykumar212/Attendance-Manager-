@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Search, BookOpen, X } from "lucide-react";
+import { Search, BookOpen, X, BarChart2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord } from "../dummyData/data.js";
 
 export default function Home() {
@@ -7,25 +8,43 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Hardcoded student data
-  const studentData = attendanceRecord[0]; // Using first student from dummy data
+  const studentData = attendanceRecord[0];
 
   const attendanceStats = useMemo(() => {
     if (!studentData?.attendanceRecord) return [];
-    const subjects = [...new Set(studentData.attendanceRecord.map((record) => record.subject))];
+    
+    const subjectGroups = studentData.attendanceRecord.reduce((acc, record) => {
+      if (!acc[record.subject]) {
+        acc[record.subject] = {
+          totalClasses: 0,
+          presentClasses: 0,
+          professorName: record.professorName
+        };
+      }
+      
+      acc[record.subject].totalClasses++;
+      if (record.status === "present") {
+        acc[record.subject].presentClasses++;
+      }
+      
+      return acc;
+    }, {});
 
-    return subjects.map((subject) => {
-      const subjectRecords = studentData.attendanceRecord.filter((record) => record.subject === subject);
-      const totalClasses = subjectRecords.length;
-      const presentClasses = subjectRecords.filter((record) => record.status === "present").length;
-      const presentPercentage = ((presentClasses / totalClasses) * 100).toFixed(1);
-      const absentPercentage = (100 - presentPercentage).toFixed(1);
+    return Object.entries(subjectGroups).map(([subject, data]) => {
+      const presentPercentage = data.totalClasses > 0 
+        ? ((data.presentClasses / data.totalClasses) * 100).toFixed(1)
+        : "0.0";
+      const absentPercentage = data.totalClasses > 0 
+        ? ((data.totalClasses - data.presentClasses) / data.totalClasses * 100).toFixed(1)
+        : "0.0";
 
       return {
         subject,
         presentPercentage,
         absentPercentage,
-        professorName: subjectRecords[0]?.professorName || "Not Assigned",
+        professorName: data.professorName || "Not Assigned",
+        totalClasses: data.totalClasses,
+        presentClasses: data.presentClasses
       };
     });
   }, [studentData]);
@@ -50,54 +69,114 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 relative">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[#800000]/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-[#800000]/10 rounded-full flex items-center justify-center">
-              <BookOpen className="text-[#800000] h-7 w-7" />
-            </div>
+    <div className="dark bg-[#0a0a1a] min-h-screen text-gray-100 overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto px-4 py-8 relative"
+      >
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+        >
+          <div className="flex items-center gap-6">
+            <motion.div 
+              whileHover={{ scale: 1.1 }}
+              className="w-20 h-20 bg-[#4a4e69]/20 rounded-full flex items-center justify-center"
+            >
+              <BookOpen className="text-[#6a7fdb] h-10 w-10" />
+            </motion.div>
             <div>
-              <h1 className="text-3xl font-bold text-[#800000]">
+              <h1 className="text-4xl font-bold text-[#6a7fdb] tracking-tight">
                 Welcome, {studentData.studentName}
               </h1>
-              <p className="text-gray-600">Roll Number: {studentData.studentRollNumber}</p>
+              <p className="text-gray-400 text-lg">Roll Number: {studentData.studentRollNumber}</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Attendance Summary</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {attendanceStats.map((stat, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg border border-gray-200 p-4 shadow-sm">
-                <h3 className="text-lg font-semibold text-[#800000] mb-1">{stat.subject}</h3>
-                <p className="text-sm text-gray-600 mb-2">Prof: {stat.professorName}</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Present:</span>
-                    <span className="font-medium text-green-600">{stat.presentPercentage}%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Absent:</span>
-                    <span className="font-medium text-red-600">{stat.absentPercentage}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#800000] rounded-full" style={{ width: `${stat.presentPercentage}%` }} />
-                  </div>
-                </div>
-              </div>
-            ))}
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Attendance Summary</h2>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="bg-[#2c2c4a] p-2 rounded-full"
+            >
+              <BarChart2 className="text-[#6a7fdb] h-6 w-6" />
+            </motion.div>
           </div>
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <AnimatePresence>
+              {attendanceStats.map((stat, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 300, 
+                    damping: 20,
+                    delay: index * 0.1 
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
+                >
+                  <h3 className="text-xl font-semibold tracking-wide text-[#6a7fdb] mb-2">{stat.subject}</h3>
+                  <p className="text-sm text-gray-400 mb-3">Prof: {stat.professorName}</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Present:</span>
+                      <span className="font-semibold text-green-400">{stat.presentPercentage}%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Absent:</span>
+                      <span className="font-semibold text-red-400">{stat.absentPercentage}%</span>
+                    </div>
+                    <div className="relative h-3 bg-rose-500/20 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${stat.presentPercentage}%` }}
+                        transition={{ 
+                          duration: 0.7, 
+                          type: "tween" 
+                        }}
+                        className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] animate-pulse"
+                      />
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {stat.presentClasses} / {stat.totalClasses} classes
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.4 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 shadow-2xl"
+        >
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Detailed Attendance</h2>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Detailed Attendance</h2>
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="relative w-full sm:w-64"
+            >
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
               <input
                 type="text"
                 value={searchTerm}
@@ -105,73 +184,110 @@ export default function Home() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Search"
-                className="w-full pl-10 pr-10 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#800000]/20"
+                placeholder="Search records..."
+                className="w-full pl-10 pr-10 py-2.5 bg-[#2c2c4a] border border-[#3c3c5a] text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb]/50 transition-all duration-300"
               />
               {searchTerm && (
-                <X onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer h-4 w-4" />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                >
+                  <X 
+                    onClick={() => setSearchTerm("")} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer h-5 w-5 hover:text-[#6a7fdb] transition-colors" 
+                  />
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-[#3c3c5a]">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Professor</th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Day</th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  {["Subject", "Professor", "Date", "Day", "Status"].map((header) => (
+                    <th 
+                      key={header} 
+                      className="px-6 py-3 bg-[#2c2c4a] text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentRecords.map((record, index) => (
-                  <tr key={index} className="hover:bg-[#800000]/5 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.subject}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.professorName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.date}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.day}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${record.status === "present" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                        {record.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
+                <AnimatePresence>
+                  {currentRecords.map((record, index) => (
+                    <motion.tr 
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 20,
+                        delay: index * 0.05 
+                      }}
+                      className="hover:bg-[#2c2c4a] transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">{record.subject}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.professorName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.day}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${record.status === "present" ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400"}`}>
+                          {record.status}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-4">
-              <button
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="flex justify-center items-center space-x-2 mt-6"
+            >
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+                className="px-4 py-2 rounded-full bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a] disabled:opacity-50 transition-all"
               >
                 Previous
-              </button>
+              </motion.button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
+                <motion.button
                   key={page}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 rounded-full transition ${currentPage === page ? "bg-[#800000] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                  className={`px-4 py-2 rounded-full transition ${currentPage === page ? "bg-[#6a7fdb] text-white" : "bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a]"}`}
                 >
                   {page}
-                </button>
+                </motion.button>
               ))}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+                className="px-4 py-2 rounded-full bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a] disabled:opacity-50 transition-all"
               >
                 Next
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

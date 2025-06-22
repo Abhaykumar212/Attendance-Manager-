@@ -1,8 +1,8 @@
 export const attendanceRecord = 
 [
   {
-    studentName: "Naitik Mangla",
-    studentRollNumber: 123105087,
+    studentName: "Abhay kumar",
+    studentRollNumber: 123105080,
     attendanceRecord: 
     [
       { subject: "Maths", day: "Monday", date: "2025-05-05", status: "present", professorName: "Dr. Verma" },
