@@ -1,622 +1,439 @@
-import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, AlertCircle, ArrowLeft, Loader2, User, BookOpen, Calendar, GraduationCap } from 'lucide-react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useRef } from "react";
+import { Search, BookOpen, X, BarChart2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { attendanceRecord } from "../dummyData/data.js";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
+import { toPng } from 'html-to-image';
 
-const YEARS = [1, 2, 3, 4];
-const BRANCHES = ["CSE", "ECE", "ME", "EE", "CE"];
-const SUBJECTS = [
-  { code: "M101", name: "Mathematics I" },
-  { code: "CS203", name: "Data Structures" },
-  { code: "CS205", name: "Database Systems" },
-  { code: "EC201", name: "Digital Electronics" },
-];
-
-export default function Add_Attendance() {
-  // Step tracking
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
-
-  // Step 1 form data
-  const [formData, setFormData] = useState({
-    year: "",
-    branch: "",
-    subject: "",
-    subjectName: "",
-    initialRoll: "",
-    finalRoll: "",
-    profName: "Dr. Reddy"
-  });
-
-  // Previous form data to track changes
-  const [previousFormData, setPreviousFormData] = useState(null);
-
-  // Step 2 attendance data
-  const [attendanceData, setAttendanceData] = useState([]);
-
-  // Step 3 confirmation
-  const [showConfirmation, setShowConfirmation] = useState(false);
-
-  // Handle Step 1 form submission
-  const handleStep1Submit = () => {
-    if (!formData.profName || !formData.year || !formData.branch || !formData.subject || !formData.initialRoll || !formData.finalRoll) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    const start = parseInt(formData.initialRoll);
-    const end = parseInt(formData.finalRoll);
-
-    if (start > end) {
-      alert('Initial roll number cannot be greater than final roll number');
-      return;
-    }
-    if(end-start > 100){
-      alert('Roll number gap must be less than 100');
-      return;
-    }
-
-    const shouldUpdateAttendance = !previousFormData ||
-      previousFormData.initialRoll !== formData.initialRoll ||
-      previousFormData.finalRoll !== formData.finalRoll;
-
-    const shouldClearAttendance = !previousFormData ||
-      previousFormData.year !== formData.year ||
-      previousFormData.branch !== formData.branch ||
-      previousFormData.subject !== formData.subject;
-
-    if (shouldClearAttendance) {
-      const attendance = [];
-      for (let roll = start; roll <= end; roll++) {
-        attendance.push({
-          rollNumber: roll,
-          status: null
-        });
-      }
-      setAttendanceData(attendance);
-    } else if (shouldUpdateAttendance) {
-      const currentRolls = attendanceData.map(s => s.rollNumber);
-      const newAttendance = [];
-
-      for (let roll = start; roll <= end; roll++) {
-        const existingStudent = attendanceData.find(s => s.rollNumber === roll);
-        newAttendance.push({
-          rollNumber: roll,
-          status: existingStudent ? existingStudent.status : null
-        });
-      }
-      setAttendanceData(newAttendance);
-    }
-
-    setPreviousFormData({ ...formData });
-    setCurrentStep(2);
-  };
-
-  // Handle attendance toggle
-  const handleAttendanceToggle = (rollNumber) => {
-    const newData = attendanceData.map(student =>
-      student.rollNumber === rollNumber
-        ? { ...student, status: !student.status }
-        : student
+// Custom tooltip component for the PieChart
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#2c2c4a] p-4 rounded-xl shadow-lg border border-[#3c3c5a] backdrop-blur-md"
+      >
+        <p className="text-lg font-bold text-[#6a7fdb]">{data.subject}</p>
+        <p className="text-sm text-gray-300">
+          <span className="font-semibold text-green-400">Present:</span> {data.presentPercentage}% ({data.presentClasses} classes)
+        </p>
+        <p className="text-sm text-gray-300">
+          <span className="font-semibold text-red-400">Absent:</span> {data.absentPercentage}% ({data.totalClasses - data.presentClasses} classes)
+        </p>
+      </motion.div>
     );
-    setAttendanceData(newData);
-  };
+  }
+  return null;
+};
 
-  // Handle Step 2 submission
-  const handleStep2Submit = () => {
-    const unmarkedCount = attendanceData.filter(student => student.status === null).length;
 
-    if (unmarkedCount > 0) {
-      setShowConfirmation(true);
-    } else {
-      proceedToStep3();
-    }
-  };
+export default function Home() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const chartRef = useRef(null); // Ref to capture the chart div as an image
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-  // Proceed to step 3
-  const proceedToStep3 = () => {
-    setShowConfirmation(false);
-    setCurrentStep(3);
-  };
+  const studentData = attendanceRecord[0];
 
-  // Handle final submission
-  const handleFinalSubmit = async () => {
-    setIsSubmitting(true);
+  const attendanceStats = useMemo(() => {
+    if (!studentData?.attendanceRecord) return [];
+    
+    const subjectGroups = studentData.attendanceRecord.reduce((acc, record) => {
+      if (!acc[record.subject]) {
+        acc[record.subject] = {
+          totalClasses: 0,
+          presentClasses: 0,
+          professorName: record.professorName
+        };
+      }
+      
+      acc[record.subject].totalClasses++;
+      if (record.status === "present") {
+        acc[record.subject].presentClasses++;
+      }
+      
+      return acc;
+    }, {});
+
+    return Object.entries(subjectGroups).map(([subject, data]) => {
+      const presentPercentage = data.totalClasses > 0 
+        ? ((data.presentClasses / data.totalClasses) * 100).toFixed(1)
+        : "0.0";
+      const absentPercentage = data.totalClasses > 0 
+        ? (((data.totalClasses - data.presentClasses) / data.totalClasses) * 100).toFixed(1)
+        : "0.0";
+
+      return {
+        subject,
+        presentPercentage: Number(presentPercentage),
+        absentPercentage: Number(absentPercentage),
+        professorName: data.professorName || "Not Assigned",
+        totalClasses: data.totalClasses,
+        presentClasses: data.presentClasses
+      };
+    });
+  }, [studentData]);
+  
+  const filteredRecords = useMemo(() => {
+    if (!studentData?.attendanceRecord) return [];
+    const searchLower = searchTerm.toLowerCase();
+
+    return studentData.attendanceRecord.filter((record) =>
+      record.subject.toLowerCase().includes(searchLower) ||
+      record.day.toLowerCase().includes(searchLower) ||
+      record.date.includes(searchLower) ||
+      record.status.toLowerCase().includes(searchLower) ||
+      record.professorName.toLowerCase().includes(searchLower)
+    );
+  }, [searchTerm, studentData]);
+
+  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const currentRecords = filteredRecords.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const PIE_COLORS = ["#34d399", "#f87171", "#60a5fa", "#facc15", "#c084fc"];
+
+  // Function to handle PDF generation
+  const handleDownloadPDF = async () => {
+    if (!chartRef.current) return;
+    setIsGeneratingPDF(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 1. Capture the chart as a PNG image
+      const chartImage = await toPng(chartRef.current, { backgroundColor: '#1a1a2e' });
 
-      const { dateString, day } = getCurrentDate();
-      const selectedSubject = SUBJECTS.find(s => s.code === formData.subject);
+      // 2. Create the PDF document
+      const doc = <AttendanceReportPDF 
+                    studentData={studentData} 
+                    attendanceStats={attendanceStats} 
+                    filteredRecords={filteredRecords} 
+                    chartImage={chartImage} 
+                  />;
 
-      const records = attendanceData.map(student => ({
-        professorName: formData.profName, 
-        studentRollNumber: student.rollNumber,
-        status: student.status ? "present" : "absent",
-        date: dateString,
-        day: day,
-        subjectName: selectedSubject.name, 
-        subjectCode: selectedSubject.code,
-        branch: formData.branch,
-        year: parseInt(formData.year)
-      }));
-
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/attendance`, records);
-      console.log("API Response:", response.data);
-
-      setFormData({
-        year: "",
-        branch: "",
-        subject: "",
-        subjectName: "",
-        initialRoll: "",
-        finalRoll: "",
-        profName: "Dr. Reddy"
-      });
-      setPreviousFormData(null);
-      setAttendanceData([]);
-      setCurrentStep(1);
-      toast.success("Attendance submitted successfully!");
-      navigate('/phome');
+      // 3. Generate the PDF blob and download it
+      const blob = await pdf(doc).toBlob();
+      saveAs(blob, `attendance_report_${studentData.studentRollNumber}.pdf`);
 
     } catch (error) {
-      console.error("Error submitting attendance:", error);
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
     } finally {
-      setIsSubmitting(false);
+      setIsGeneratingPDF(false);
     }
-  };
-
-  // Handle back navigation
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  // Get current date and day
-  const getCurrentDate = () => {
-    const date = new Date();
-    return {
-      formatted: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      day: date.toLocaleDateString('en-US', { weekday: 'long' }),
-      dateString: date.toISOString().split('T')[0]
-    };
-  };
-
-  // Render different steps
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Professor Name</label>
-        <input
-          type="text"
-          required
-          value={formData.profName}
-          onChange={(e) => setFormData(prev => ({ ...prev, profName: e.target.value }))}
-          className="w-full px-4 py-3 bg-[#1a1a2e]/70 backdrop-blur-sm border border-[#6a7fdb]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb] text-white placeholder-gray-400 transition-all duration-200"
-          placeholder="Enter professor name"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Year</label>
-        <select
-          required
-          value={formData.year}
-          onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
-          className="w-full px-4 py-3 bg-[#1a1a2e]/70 backdrop-blur-sm border border-[#6a7fdb]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb] text-white transition-all duration-200"
-        >
-          <option value="" className="bg-[#0a0a1a]">Select Year</option>
-          {YEARS.map(year => (
-            <option key={year} value={year} className="bg-[#0a0a1a]">{year} Year</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Branch</label>
-        <select
-          required
-          value={formData.branch}
-          onChange={(e) => setFormData(prev => ({ ...prev, branch: e.target.value }))}
-          className="w-full px-4 py-3 bg-[#1a1a2e]/70 backdrop-blur-sm border border-[#6a7fdb]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb] text-white transition-all duration-200"
-        >
-          <option value="" className="bg-[#0a0a1a]">Select Branch</option>
-          {BRANCHES.map(branch => (
-            <option key={branch} value={branch} className="bg-[#0a0a1a]">{branch}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
-        <select
-          required
-          value={formData.subject}
-          onChange={(e) => {
-            const selectedSubject = SUBJECTS.find(s => s.code === e.target.value);
-            setFormData(prev => ({
-              ...prev,
-              subject: e.target.value,
-              subjectName: selectedSubject?.name || ""
-            }));
-          }}
-          className="w-full px-4 py-3 bg-[#1a1a2e]/70 backdrop-blur-sm border border-[#6a7fdb]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb] text-white transition-all duration-200"
-        >
-          <option value="" className="bg-[#0a0a1a]">Select Subject</option>
-          {SUBJECTS.map(subject => (
-            <option key={subject.code} value={subject.code} className="bg-[#0a0a1a]">
-              {subject.name} ({subject.code})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Initial Roll No.</label>
-          <input
-            type="number"
-            required
-            value={formData.initialRoll}
-            onChange={(e) => setFormData(prev => ({ ...prev, initialRoll: e.target.value }))}
-            className="w-full px-4 py-3 bg-[#1a1a2e]/70 backdrop-blur-sm border border-[#6a7fdb]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb] text-white transition-all duration-200"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Final Roll No.</label>
-          <input
-            type="number"
-            required
-            value={formData.finalRoll}
-            onChange={(e) => setFormData(prev => ({ ...prev, finalRoll: e.target.value }))}
-            className="w-full px-4 py-3 bg-[#1a1a2e]/70 backdrop-blur-sm border border-[#6a7fdb]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb] text-white transition-all duration-200"
-          />
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={handleStep1Submit}
-        className="w-full py-3 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fc1] text-white rounded-lg hover:from-[#6a7fdb]/90 hover:to-[#4a5fc1]/90 transition-all duration-300 shadow-lg hover:shadow-[#6a7fdb]/30 font-medium"
-      >
-        Next Step
-      </button>
-    </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      {/* Instructions Card */}
-      <div className="bg-[#1a1a2e]/70 backdrop-blur-sm rounded-lg p-4 border border-[#6a7fdb]/30">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-[#6a7fdb] mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="font-medium text-white mb-1">How to mark attendance</h4>
-            <p className="text-sm text-gray-300">
-              Click on each student's card to toggle between Present and Absent status.
-              Unmarked students will be marked as Present by default when submitting.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => {
-            const newData = attendanceData.map(student => ({ ...student, status: true }));
-            setAttendanceData(newData);
-          }}
-          className="flex-1 px-4 py-2 bg-[#6a7fdb]/10 border border-[#6a7fdb]/30 text-[#6a7fdb] rounded-lg hover:bg-[#6a7fdb]/20 transition-all duration-200 text-sm font-medium"
-        >
-          Mark All Present
-        </button>
-        <button
-          onClick={() => {
-            const newData = attendanceData.map(student => ({ ...student, status: false }));
-            setAttendanceData(newData);
-          }}
-          className="flex-1 px-4 py-2 bg-[#ff4d4d]/10 border border-[#ff4d4d]/30 text-[#ff4d4d] rounded-lg hover:bg-[#ff4d4d]/20 transition-all duration-200 text-sm font-medium"
-        >
-          Mark All Absent
-        </button>
-        <button
-          onClick={() => {
-            const newData = attendanceData.map(student => ({ ...student, status: null }));
-            setAttendanceData(newData);
-          }}
-          className="flex-1 px-4 py-2 bg-gray-500/10 border border-gray-500/30 text-gray-300 rounded-lg hover:bg-gray-500/20 transition-all duration-200 text-sm font-medium"
-        >
-          Clear All
-        </button>
-      </div>
-
-      {/* Class Info Summary */}
-      <div className="bg-[#1a1a2e]/70 backdrop-blur-sm rounded-lg p-4 border border-[#6a7fdb]/30">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-[#6a7fdb]" />
-            <span className="text-gray-300">Professor:</span>
-            <span className="font-medium text-white">{formData.profName}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-[#6a7fdb]" />
-            <span className="text-gray-300">Year & Branch:</span>
-            <span className="font-medium text-white">{formData.year} {formData.branch}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-[#6a7fdb]" />
-            <span className="text-gray-300">Subject:</span>
-            <span className="font-medium text-white">{SUBJECTS.find(s => s.code === formData.subject)?.name}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-[#6a7fdb]" />
-            <span className="text-gray-300">Date:</span>
-            <span className="font-medium text-white">{getCurrentDate().formatted}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-3">
-        {attendanceData.map((student) => (
-          <div
-            key={student.rollNumber}
-            onClick={() => handleAttendanceToggle(student.rollNumber)}
-            className={`p-4 rounded-lg border cursor-pointer transition-all transform hover:scale-[1.01] backdrop-blur-sm ${student.status === null
-                ? 'bg-[#1a1a2e]/50 border-[#6a7fdb]/20 hover:border-[#6a7fdb]/40'
-                : student.status
-                  ? 'bg-[#6a7fdb]/10 border-[#6a7fdb]/30 hover:border-[#6a7fdb]/50'
-                  : 'bg-[#ff4d4d]/10 border-[#ff4d4d]/30 hover:border-[#ff4d4d]/50'
-              }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-white">Roll No: {student.rollNumber}</span>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${student.status === null
-                  ? 'bg-[#6a7fdb]/20 text-[#6a7fdb]'
-                  : student.status
-                    ? 'bg-[#6a7fdb]/20 text-[#60f67b]'
-                    : 'bg-[#ff4d4d]/20 text-[#ff4d4d]'
-                }`}>
-                {student.status === null ? 'Unmarked' : student.status ? 'Present' : 'Absent'}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={handleStep2Submit}
-        className="w-full py-3 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fc1] text-white rounded-lg hover:from-[#6a7fdb]/90 hover:to-[#4a5fc1]/90 transition-all duration-300 shadow-lg hover:shadow-[#6a7fdb]/30 font-medium"
-      >
-        Submit Attendance
-      </button>
-    </div>
-  );
-
-  const renderStep3 = () => {
-    const presentCount = attendanceData.filter(s => s.status === true).length;
-    const absentCount = attendanceData.length - presentCount;
-    const selectedSubject = SUBJECTS.find(s => s.code === formData.subject);
-
-    return (
-      <div className="space-y-6">
-        {/* Class Details Card */}
-        <div className="bg-gradient-to-r from-[#6a7fdb]/10 to-[#4a5fc1]/10 rounded-lg border border-[#6a7fdb]/30 p-6 backdrop-blur-sm">
-          <h3 className="text-lg font-semibold text-[#6a7fdb] mb-4">Class Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3">
-              <User className="h-5 w-5 text-[#6a7fdb]" />
-              <div>
-                <p className="text-sm text-gray-300">Professor</p>
-                <p className="font-medium text-white">{formData.profName}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-5 w-5 text-[#6a7fdb]" />
-              <div>
-                <p className="text-sm text-gray-300">Subject</p>
-                <p className="font-medium text-white">{selectedSubject?.name} ({selectedSubject?.code})</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-5 w-5 text-[#6a7fdb]" />
-              <div>
-                <p className="text-sm text-gray-300">Year & Branch</p>
-                <p className="font-medium text-white">{formData.year} Year - {formData.branch}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-[#6a7fdb]" />
-              <div>
-                <p className="text-sm text-gray-300">Date</p>
-                <p className="font-medium text-white">{getCurrentDate().formatted}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Attendance Summary */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-[#1a1a2e]/70 backdrop-blur-sm rounded-lg border border-[#6a7fdb]/30 p-4">
-            <h4 className="text-sm text-gray-300 mb-1">Total Students</h4>
-            <p className="text-2xl font-bold text-[#6a7fdb]">{attendanceData.length}</p>
-          </div>
-          <div className="bg-[#6a7fdb]/10 backdrop-blur-sm rounded-lg border border-[#60f67b]/30 p-4">
-            <h4 className="text-sm text-gray-300 mb-1">Present</h4>
-            <p className="text-2xl font-bold text-[#6a7fdb]">{presentCount}</p>
-          </div>
-          <div className="bg-[#ff4d4d]/10 backdrop-blur-sm rounded-lg border border-[#ff4d4d]/30 p-4">
-            <h4 className="text-sm text-gray-300 mb-1">Absent</h4>
-            <p className="text-2xl font-bold text-[#ff4d4d]">{absentCount}</p>
-          </div>
-        </div>
-
-        {/* Attendance Percentage */}
-        <div className="bg-[#1a1a2e]/70 backdrop-blur-sm rounded-lg border border-[#6a7fdb]/30 p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-300">Attendance Percentage</span>
-            <span className="text-lg font-bold text-[#6a7fdb]">
-              {attendanceData.length > 0 ? Math.round((presentCount / attendanceData.length) * 100) : 0}%
-            </span>
-          </div>
-          <div className="w-full bg-[#0a0a1a] rounded-full h-2.5">
-            <div
-              className="bg-gradient-to-r from-[#6a7fdb] to-[#4a5fc1] h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${attendanceData.length > 0 ? (presentCount / attendanceData.length) * 100 : 0}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Detailed Student List */}
-        <div className="bg-[#1a1a2e]/70 backdrop-blur-sm rounded-lg border border-[#6a7fdb]/30">
-          <div className="p-4 border-b border-[#6a7fdb]/30">
-            <h4 className="font-medium text-white">Student Attendance Details</h4>
-          </div>
-          <div className="divide-y divide-[#6a7fdb]/30 max-h-64 overflow-y-auto">
-            {attendanceData.map((student) => (
-              <div key={student.rollNumber} className="p-4 flex justify-between items-center hover:bg-[#6a7fdb]/5 transition-colors duration-200">
-                <span className="font-medium text-white">Roll No: {student.rollNumber}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${student.status ? 'bg-[#6a7fdb]/20 text-[#6a7fdb]' : 'bg-[#ff4d4d]/20 text-[#ff4d4d]'
-                  }`}>
-                  {student.status ? 'Present' : 'Absent'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleBack}
-            className="flex-1 px-4 py-2 border border-[#6a7fdb]/30 rounded-lg text-[#6a7fdb] hover:bg-[#6a7fdb]/10 transition-all duration-200 flex items-center justify-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
-          <button
-            onClick={handleFinalSubmit}
-            disabled={isSubmitting}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fc1] text-white rounded-lg hover:from-[#6a7fdb]/90 hover:to-[#4a5fc1]/90 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              'Submit Attendance'
-            )}
-          </button>
-        </div>
-      </div>
-    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a1a] to-[#1a1a2e] relative overflow-hidden">
-      {/* Starry background effect */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white animate-pulse"
-            style={{
-              width: `${Math.random() * 3}px`,
-              height: `${Math.random() * 3}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.5 + 0.1,
-              animationDuration: `${Math.random() * 5 + 3}s`
-            }}
-          />
-        ))}
-      </div>
+    <div className="dark bg-[#0a0a1a] min-h-screen text-gray-100 overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto px-4 py-8 relative"
+      >
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+        >
+          <div className="flex items-center gap-6">
+            <motion.div 
+              whileHover={{ scale: 1.1 }}
+              className="w-20 h-20 bg-[#4a4e69]/20 rounded-full flex items-center justify-center"
+            >
+              <BookOpen className="text-[#6a7fdb] h-10 w-10" />
+            </motion.div>
+            <div>
+              <h1 className="text-4xl font-bold text-[#6a7fdb] tracking-tight">
+                Welcome, {studentData.studentName}
+              </h1>
+              <p className="text-gray-400 text-lg">Roll Number: {studentData.studentRollNumber}</p>
+            </div>
+          </div>
+        </motion.div>
 
-      {/* Animated gradient background elements */}
-      <div className="absolute top-1/4 -left-1/4 w-[500px] h-[500px] rounded-full bg-[#6a7fdb]/10 blur-3xl animate-[pulse_15s_infinite]" />
-      <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] rounded-full bg-[#4a5fc1]/10 blur-3xl animate-[pulse_20s_infinite]" />
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Attendance Summary</h2>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="bg-[#2c2c4a] p-2 rounded-full"
+            >
+              <BarChart2 className="text-[#6a7fdb] h-6 w-6" />
+            </motion.div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <AnimatePresence>
+              {attendanceStats.map((stat, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 300, 
+                    damping: 20,
+                    delay: index * 0.1 
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
+                >
+                  <h3 className="text-xl font-semibold tracking-wide text-[#6a7fdb] mb-2">{stat.subject}</h3>
+                  <p className="text-sm text-gray-400 mb-3">Prof: {stat.professorName}</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Present:</span>
+                      <span className="font-semibold text-green-400">{stat.presentPercentage}%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Absent:</span>
+                      <span className="font-semibold text-red-400">{stat.absentPercentage}%</span>
+                    </div>
+                    <div className="relative h-3 bg-rose-500/20 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${stat.presentPercentage}%` }}
+                        transition={{ 
+                          duration: 0.7, 
+                          type: "tween" 
+                        }}
+                        className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] animate-pulse"
+                      />
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {stat.presentClasses} / {stat.totalClasses} classes
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-[#1a1a2e]/70 backdrop-blur-lg rounded-2xl shadow-xl border border-[#6a7fdb]/20 p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                {currentStep > 1 && !isSubmitting && (
-                  <button
-                    onClick={handleBack}
-                    className="p-2 hover:bg-[#6a7fdb]/10 rounded-full transition-colors duration-200"
+        {/* Visual Insights & Download Button (IMPROVED) */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.3 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl flex flex-col lg:flex-row gap-8 items-center"
+        >
+          <div className="flex-1 w-full flex flex-col items-center">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb] mb-4">Visual Insights</h2>
+            {/* The chart is rendered inside this div so it can be captured as an image */}
+            <div ref={chartRef} className="bg-[#1a1a2e] p-4 rounded-3xl" style={{ width: '100%', maxWidth: '500px', height: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={attendanceStats}
+                    dataKey="presentPercentage"
+                    nameKey="subject"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60} // Donut inner radius
+                    outerRadius={100} // Donut outer radius
+                    paddingAngle={3}
+                    cornerRadius={8}
+                    fill="#8884d8"
+                    labelLine={false}
                   >
-                    <ArrowLeft className="h-5 w-5 text-[#6a7fdb]" />
-                  </button>
-                )}
-                <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#6a7fdb] to-[#4a5fc1]">
-                  {currentStep === 1 && "Add Attendance"}
-                  {currentStep === 2 && "Mark Attendance"}
-                  {currentStep === 3 && "Attendance Summary"}
-                </h1>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <span className={currentStep >= 1 ? "text-[#6a7fdb]" : ""}>Details</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className={currentStep >= 2 ? "text-[#6a7fdb]" : ""}>Attendance</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className={currentStep >= 3 ? "text-[#6a7fdb]" : ""}>Summary</span>
-              </div>
+                    {attendanceStats.map((entry, idx) => (
+                      <Cell 
+                        key={`cell-present-${idx}`} 
+                        fill={PIE_COLORS[idx % PIE_COLORS.length]} 
+                        stroke="#1a1a2e"
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </Pie>
+                  <Pie
+                    data={attendanceStats}
+                    dataKey="absentPercentage"
+                    nameKey="subject"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={105} // Outer ring inner radius
+                    outerRadius={115} // Outer ring outer radius
+                    fill="#82ca9d"
+                    label={false}
+                    paddingAngle={3}
+                    cornerRadius={8}
+                  >
+                    {attendanceStats.map((entry, idx) => (
+                      <Cell 
+                        key={`cell-absent-${idx}`} 
+                        fill="#f87171" 
+                        stroke="#1a1a2e"
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend 
+                    layout="horizontal" 
+                    verticalAlign="bottom" 
+                    align="center" 
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    contentStyle={{ backgroundColor: '#2c2c4a', border: 'none', borderRadius: '12px' }}
+                    itemStyle={{ color: '#e0e0e0' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-
-            {/* Content */}
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
           </div>
-        </div>
-      </div>
+          <div className="flex flex-col items-center gap-4">
+            <h3 className="text-lg font-semibold text-[#6a7fdb]">Download Attendance Report</h3>
+            {/* PDF Download Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+              className="px-6 py-2 bg-[#6a7fdb] text-white rounded-lg font-semibold shadow hover:bg-[#4a5fdb] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingPDF ? 'Generating...' : 'Download PDF Report'}
+            </motion.button>
+          </div>
+        </motion.div>
 
-      {/* Confirmation Modal */}
-      {showConfirmation && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#1a1a2e] rounded-2xl shadow-xl max-w-md w-full p-6 border border-[#6a7fdb]/30">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertCircle className="text-[#6a7fdb] h-6 w-6" />
-              <h3 className="text-lg font-medium text-white">Unmarked Students</h3>
-            </div>
-            <p className="text-gray-300 mb-6">
-              {attendanceData.filter(s => s.status === null).length} students are unmarked.
-              They will be marked as present by default. Do you want to proceed?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmation(false)}
-                className="flex-1 px-4 py-2 border border-[#6a7fdb]/30 rounded-lg text-[#6a7fdb] hover:bg-[#6a7fdb]/10 transition-colors duration-200"
-              >
-                Go Back
-              </button>
-              <button
-                onClick={() => {
-                  const newData = attendanceData.map(student => ({
-                    ...student,
-                    status: student.status === null ? true : student.status
-                  }));
-                  setAttendanceData(newData);
-                  proceedToStep3();
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.4 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 shadow-2xl"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Detailed Attendance</h2>
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="relative w-full sm:w-64"
+            >
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
                 }}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fc1] text-white rounded-lg hover:from-[#6a7fdb]/90 hover:to-[#4a5fc1]/90 transition-all duration-200"
-              >
-                Proceed
-              </button>
-            </div>
+                placeholder="Search records..."
+                className="w-full pl-10 pr-10 py-2.5 bg-[#2c2c4a] border border-[#3c3c5a] text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb]/50 transition-all duration-300"
+              />
+              {searchTerm && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                >
+                  <X 
+                    onClick={() => setSearchTerm("")} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer h-5 w-5 hover:text-[#6a7fdb] transition-colors" 
+                  />
+                </motion.div>
+              )}
+            </motion.div>
           </div>
-        </div>
-      )}
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#3c3c5a]">
+              <thead>
+                <tr>
+                  {["Subject", "Professor", "Date", "Day", "Status"].map((header) => (
+                    <th 
+                      key={header} 
+                      className="px-6 py-3 bg-[#2c2c4a] text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
+                <AnimatePresence>
+                  {currentRecords.map((record, index) => (
+                    <motion.tr 
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 300, 
+                        damping: 20,
+                        delay: index * 0.05 
+                      }}
+                      className="hover:bg-[#2c2c4a] transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">{record.subject}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.professorName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.day}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${record.status === "present" ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400"}`}>
+                          {record.status}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="flex justify-center items-center space-x-2 mt-6"
+            >
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-full bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a] disabled:opacity-50 transition-all"
+              >
+                Previous
+              </motion.button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <motion.button
+                  key={page}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-4 py-2 rounded-full transition ${currentPage === page ? "bg-[#6a7fdb] text-white" : "bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a]"}`}
+                >
+                  {page}
+                </motion.button>
+              ))}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-full bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a] disabled:opacity-50 transition-all"
+              >
+                Next
+              </motion.button>
+            </motion.div>
+          )}
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

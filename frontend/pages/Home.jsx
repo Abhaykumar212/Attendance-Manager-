@@ -2,6 +2,48 @@ import React, { useMemo, useState } from "react";
 import { Search, BookOpen, X, BarChart2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord } from "../dummyData/data.js";
+import { CSVLink } from "react-csv";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+// Custom tooltip component for the PieChart
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#2c2c4a] p-4 rounded-xl shadow-lg border border-[#3c3c5a] backdrop-blur-md"
+      >
+        <p className="text-lg font-bold text-[#6a7fdb]">{data.subject}</p>
+        <p className="text-sm text-gray-300">
+          <span className="font-semibold text-green-400">Present:</span> {data.presentPercentage}% ({data.presentClasses} classes)
+        </p>
+        <p className="text-sm text-gray-300">
+          <span className="font-semibold text-red-400">Absent:</span> {data.absentPercentage}% ({data.totalClasses - data.presentClasses} classes)
+        </p>
+      </motion.div>
+    );
+  }
+  return null;
+};
+
+// Custom label for the PieChart to show subject name and percentage in the center
+const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, index, subject }) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx;
+  const y = cy;
+
+  return (
+    <text x={x} y={y} fill="#e0e0e0" textAnchor="middle" dominantBaseline="central">
+      <tspan x={x} dy="-0.5em" fontWeight="bold" fontSize="16px" fill="#6a7fdb">{subject}</tspan>
+      <tspan x={x} dy="1.5em" fontSize="12px" fill="#a0a0a0">
+        {value}%
+      </tspan>
+    </text>
+  );
+};
+
 
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,20 +77,20 @@ export default function Home() {
         ? ((data.presentClasses / data.totalClasses) * 100).toFixed(1)
         : "0.0";
       const absentPercentage = data.totalClasses > 0 
-        ? ((data.totalClasses - data.presentClasses) / data.totalClasses * 100).toFixed(1)
+        ? (((data.totalClasses - data.presentClasses) / data.totalClasses) * 100).toFixed(1)
         : "0.0";
 
       return {
         subject,
-        presentPercentage,
-        absentPercentage,
+        presentPercentage: Number(presentPercentage),
+        absentPercentage: Number(absentPercentage),
         professorName: data.professorName || "Not Assigned",
         totalClasses: data.totalClasses,
         presentClasses: data.presentClasses
       };
     });
   }, [studentData]);
-
+  
   const filteredRecords = useMemo(() => {
     if (!studentData?.attendanceRecord) return [];
     const searchLower = searchTerm.toLowerCase();
@@ -62,11 +104,21 @@ export default function Home() {
     );
   }, [searchTerm, studentData]);
 
+  const csvData = [
+    ["Subject", "Professor", "Date", "Day", "Status"],
+    ...filteredRecords.map(r => [
+      r.subject, r.professorName, r.date, r.day, r.status
+    ])
+  ];
+
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
   const currentRecords = filteredRecords.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // COLORS for the pie chart segments
+  const PIE_COLORS = ["#34d399", "#f87171", "#60a5fa", "#facc15", "#c084fc"];
 
   return (
     <div className="dark bg-[#0a0a1a] min-h-screen text-gray-100 overflow-hidden">
@@ -159,6 +211,84 @@ export default function Home() {
                 </motion.div>
               ))}
             </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Visual Insights & Download Button (IMPROVED) */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.3 }}
+          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl flex flex-col lg:flex-row gap-8 items-center"
+        >
+          <div className="flex-1 w-full flex flex-col ">
+            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb] mb-4">Visual Insights</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={attendanceStats}
+                  dataKey="presentPercentage"
+                  nameKey="subject"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={80} // Make it a donut chart
+                  outerRadius={120} // Make it a donut chart
+                  paddingAngle={5} // Add padding between slices
+                  cornerRadius={10} // Rounded corners for slices
+                  fill="#8884d8"
+                  labelLine={false}
+                >
+                  {attendanceStats.map((entry, idx) => (
+                    <Cell 
+                      key={`cell-${idx}`} 
+                      fill={PIE_COLORS[idx % PIE_COLORS.length]} 
+                      stroke="#1a1a2e" // Add a stroke to match the background
+                      strokeWidth={2}
+                    />
+                  ))}
+                </Pie>
+                {/* A second Pie to show the absent part for each subject */}
+                <Pie
+                  data={attendanceStats}
+                  dataKey="absentPercentage"
+                  nameKey="subject"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={115} // Outer ring
+                  outerRadius={128} // Outer ring
+                  fill="#82ca9d"
+                  label={false}
+                  paddingAngle={5}
+                  cornerRadius={10}
+                >
+                  {attendanceStats.map((entry, idx) => (
+                    <Cell 
+                      key={`cell-absent-${idx}`} 
+                      fill="#f87171" // Use a consistent absent color
+                      stroke="#1a1a2e"
+                      strokeWidth={2}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend 
+                  layout="horizontal" 
+                  verticalAlign="bottom" 
+                  align="center" 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <h3 className="text-lg font-semibold text-[#6a7fdb]">Download Attendance Report</h3>
+            <CSVLink
+              data={csvData}
+              filename={`attendance_report_${studentData.studentRollNumber}.csv`}
+              className="px-6 py-2 bg-[#6a7fdb] text-white rounded-lg font-semibold shadow hover:bg-[#4a5fdb] transition"
+            >
+              Download CSV
+            </CSVLink>
           </div>
         </motion.div>
 
