@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { verify } = require('../services/mailservice');
 
 const ProfSchema = new mongoose.Schema({
     name: {
@@ -26,7 +25,8 @@ const ProfSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        required: true
+        required: true,
+        default : 'professor'
     },
 })
 

@@ -1,5 +1,6 @@
 const studentModel = require('../model/studentModel');
 const profModel = require('../model/profModel');
+const attendanceModel = require('../model/attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('../services/mailservice');
@@ -55,7 +56,7 @@ const register = async (req, res) => {
   const allowedDomains = ['nitkkr.ac.in'];
   const emailDomain = email.split('@')[1];
   if (!allowedDomains.includes(emailDomain)) {
-    return res.status(400).json({ error: 'Only NIT Kurukshetra emails are allowed' });
+    return res.status(400).json({success: false, error: 'Only NIT Kurukshetra emails are allowed' });
   }
 
   const isStudent = /^\d+$/.test(email.split('@')[0]);
@@ -64,7 +65,7 @@ const register = async (req, res) => {
 
   try {
     const existing = await model.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'User already exists' });
+    if (existing) return res.status(400).json({message: "User already exists", success: false, error: 'User already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -168,7 +169,7 @@ const register = async (req, res) => {
     });
 
     await sendVerificationOTP(req, res, false, email, name, role);
-    return res.status(202).json({ message: "Successful registration" });
+    return res.status(202).json({ success: true, message: "Successful registration" });
 
   } catch (err) {
     console.error('Register error:', err);
@@ -239,9 +240,39 @@ const verifyemail = async (req, res) => {
   }
 };
 
+const attendanceStoreInDB = async (req, res) => {
+  try {
+    const records = req.body;
+
+    if (!Array.isArray(records)) {
+      return res.status(400).json({ error: 'Expected an array of attendance records' });
+    }
+
+    const saved = await attendanceModel.insertMany(records);
+    return res.status(201).json(saved);
+  } catch (error) {
+    console.error('Error storing attendance:', error);
+    res.status(500).json({ error: 'Server error while saving attendance' });
+  }
+};
+
+const createSubject = async (req, res) => {
+  try {
+    const { subjectName, subjectCode } = req.body;
+    const subject = new subjectModel({ subjectName, subjectCode });
+    await subject.save();
+    res.status(201).json(subject);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+
+
 module.exports = {
   register,
   login,
   verifyemail,
-  sendVerificationOTP
+  sendVerificationOTP,
+  attendanceStoreInDB
 };
