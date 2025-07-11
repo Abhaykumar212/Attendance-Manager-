@@ -8,6 +8,7 @@ const path = require('path');
 const dataRoutes = require('./router/dataRoute');
 const studentRoute = require('./router/studentRoute');
 const subjectRoute = require('./router/subjectRoute');
+
 const db = require('./db/db');
 require('dotenv').config();
 db.connect;
@@ -28,7 +29,10 @@ app.use('/', userRoutes);
 app.use('/', dataRoutes);
 app.use('/api/students', studentRoute);
 app.use('/', subjectRoute);
-
+// ...existing code...
+const notificationRoutes = require('./router/notifications');
+app.use('/api/notifications', notificationRoutes);
+// ...existing code...
 app.use(express.static(path.join(__dirname, 'public')))
 
 server.listen(port, () => {
