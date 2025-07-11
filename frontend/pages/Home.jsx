@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { Search, BookOpen, X, BarChart2 } from "lucide-react";
+import { Search, BookOpen, X, BarChart2, Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord } from "../dummyData/data.js";
-import { CSVLink } from "react-csv";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import axios from "axios";
 
 // Custom tooltip component for the PieChart
 const CustomTooltip = ({ active, payload }) => {
@@ -28,7 +30,6 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-// Custom label for the PieChart to show subject name and percentage in the center
 const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, index, subject }) => {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx;
@@ -44,17 +45,45 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, ind
   );
 };
 
-
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const [notification, setNotification] = useState("");
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [showNotifModal, setShowNotifModal] = useState(false);
+
   const studentData = attendanceRecord[0];
+
+  const handleGetNotification = async () => {
+    setNotifLoading(true);
+    setNotification("");
+    setShowNotifModal(false);
+    try {
+      const response = await axios.post("http://localhost:3000/api/notifications/personalized", {
+        studentData: {
+          name: studentData.studentName,
+        },
+        attendanceRecords: studentData.attendanceRecord,
+        context: {
+          courseName: "All Subjects",
+          requiredAttendance: 75,
+          alertType: "info",
+          academicPeriod: "Current Semester"
+        }
+      });
+      setNotification(response.data.message);
+      setShowNotifModal(true);
+    } catch (err) {
+      setNotification("Failed to get notification.");
+      setShowNotifModal(true);
+    }
+    setNotifLoading(false);
+  };
 
   const attendanceStats = useMemo(() => {
     if (!studentData?.attendanceRecord) return [];
-    
     const subjectGroups = studentData.attendanceRecord.reduce((acc, record) => {
       if (!acc[record.subject]) {
         acc[record.subject] = {
@@ -63,12 +92,10 @@ export default function Home() {
           professorName: record.professorName
         };
       }
-      
       acc[record.subject].totalClasses++;
       if (record.status === "present") {
         acc[record.subject].presentClasses++;
       }
-      
       return acc;
     }, {});
 
@@ -90,7 +117,7 @@ export default function Home() {
       };
     });
   }, [studentData]);
-  
+
   const filteredRecords = useMemo(() => {
     if (!studentData?.attendanceRecord) return [];
     const searchLower = searchTerm.toLowerCase();
@@ -104,12 +131,149 @@ export default function Home() {
     );
   }, [searchTerm, studentData]);
 
-  const csvData = [
-    ["Subject", "Professor", "Date", "Day", "Status"],
-    ...filteredRecords.map(r => [
-      r.subject, r.professorName, r.date, r.day, r.status
-    ])
-  ];
+  const handleDownloadPDF = () => {
+    try {
+      if (typeof jsPDF === 'undefined') {
+        throw new Error('jsPDF library not loaded');
+      }
+
+      const doc = new jsPDF();
+      let yPosition = 20;
+      
+      doc.setFontSize(20);
+      doc.setTextColor(106, 127, 219);
+      doc.text("Attendance Report", 14, yPosition);
+      yPosition += 15;
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Student Name: ${studentData.studentName}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Roll Number: ${studentData.studentRollNumber}`, 14, yPosition);
+      yPosition += 10;
+      doc.text(`Report Generated: ${new Date().toLocaleDateString()}`, 14, yPosition);
+      yPosition += 20;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(106, 127, 219);
+      doc.text("Attendance Summary", 14, yPosition);
+      yPosition += 15;
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      
+      attendanceStats.forEach((stat, index) => {
+        if (yPosition > 270) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.text(`${stat.subject}`, 14, yPosition);
+        doc.text(`Prof: ${stat.professorName}`, 70, yPosition);
+        doc.text(`${stat.presentClasses}/${stat.totalClasses}`, 130, yPosition);
+        doc.text(`${stat.presentPercentage}%`, 170, yPosition);
+        yPosition += 8;
+      });
+
+      yPosition += 15;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(106, 127, 219);
+      doc.text("Detailed Attendance Records", 14, yPosition);
+      yPosition += 15;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Subject", 14, yPosition);
+      doc.text("Professor", 50, yPosition);
+      doc.text("Date", 100, yPosition);
+      doc.text("Day", 130, yPosition);
+      doc.text("Status", 160, yPosition);
+      yPosition += 10;
+
+      doc.line(14, yPosition - 2, 190, yPosition - 2);
+      yPosition += 5;
+
+      filteredRecords.forEach((record, index) => {
+        if (yPosition > 270) {
+          doc.addPage();
+          yPosition = 20;
+          
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.text("Subject", 14, yPosition);
+          doc.text("Professor", 50, yPosition);
+          doc.text("Date", 100, yPosition);
+          doc.text("Day", 130, yPosition);
+          doc.text("Status", 160, yPosition);
+          yPosition += 10;
+          doc.line(14, yPosition - 2, 190, yPosition - 2);
+          yPosition += 5;
+        }
+        
+        doc.text(record.subject, 14, yPosition);
+        doc.text(record.professorName, 50, yPosition);
+        doc.text(record.date, 100, yPosition);
+        doc.text(record.day, 130, yPosition);
+        
+        if (record.status === 'present') {
+          doc.setTextColor(0, 128, 0);
+        } else {
+          doc.setTextColor(255, 0, 0);
+        }
+        doc.text(record.status.charAt(0).toUpperCase() + record.status.slice(1), 160, yPosition);
+        doc.setTextColor(0, 0, 0);
+        
+        yPosition += 8;
+      });
+
+      doc.save(`attendance_report_${studentData.studentRollNumber}_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      generateTextReport();
+    }
+  };
+
+  const generateTextReport = () => {
+    try {
+      let reportContent = "ATTENDANCE REPORT\n";
+      reportContent += "=================\n\n";
+      reportContent += `Student Name: ${studentData.studentName}\n`;
+      reportContent += `Roll Number: ${studentData.studentRollNumber}\n`;
+      reportContent += `Report Generated: ${new Date().toLocaleDateString()}\n\n`;
+      
+      reportContent += "ATTENDANCE SUMMARY\n";
+      reportContent += "------------------\n";
+      attendanceStats.forEach(stat => {
+        reportContent += `${stat.subject}\n`;
+        reportContent += `  Professor: ${stat.professorName}\n`;
+        reportContent += `  Present: ${stat.presentClasses}/${stat.totalClasses} (${stat.presentPercentage}%)\n`;
+        reportContent += `  Absent: ${stat.totalClasses - stat.presentClasses}/${stat.totalClasses} (${stat.absentPercentage}%)\n\n`;
+      });
+      
+      reportContent += "DETAILED RECORDS\n";
+      reportContent += "----------------\n";
+      filteredRecords.forEach(record => {
+        reportContent += `${record.date} | ${record.day} | ${record.subject} | ${record.professorName} | ${record.status.toUpperCase()}\n`;
+      });
+      
+      const blob = new Blob([reportContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance_report_${studentData.studentRollNumber}_${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert('PDF generation failed. Downloaded as text file instead.');
+    } catch (textError) {
+      console.error('Error generating text report:', textError);
+      alert('Unable to generate report. Please check console for details.');
+    }
+  };
 
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
   const currentRecords = filteredRecords.slice(
@@ -117,7 +281,6 @@ export default function Home() {
     currentPage * itemsPerPage
   );
 
-  // COLORS for the pie chart segments
   const PIE_COLORS = ["#34d399", "#f87171", "#60a5fa", "#facc15", "#c084fc"];
 
   return (
@@ -128,6 +291,76 @@ export default function Home() {
         transition={{ duration: 0.5 }}
         className="container mx-auto px-4 py-8 relative"
       >
+        {/* Enhanced Notification Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="sticky top-4 z-40 mx-auto mb-8 w-full max-w-4xl px-4"
+        >
+          <div className="relative">
+            {/* Gradient border effect */}
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fdb] rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-200"></div>
+            
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="relative bg-[#1a1a2e] rounded-xl border border-[#2c2c4a] p-4 shadow-lg overflow-hidden"
+            >
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <motion.div 
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0]
+                    }}
+                    transition={{ 
+                      repeat: Infinity, 
+                      repeatType: "reverse", 
+                      duration: 2 
+                    }}
+                    className="bg-gradient-to-br from-[#6a7fdb] to-[#4a5fdb] p-3 rounded-lg"
+                  >
+                    <Bell className="h-6 w-6 text-white" />
+                  </motion.div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#6a7fdb]">AI-Powered Insights</h3>
+                    <p className="text-sm text-gray-400">Get personalized attendance recommendations</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleGetNotification}
+                  disabled={notifLoading}
+                  className={`px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all ${
+                    notifLoading 
+                      ? "bg-[#4a5fdb] text-gray-300 cursor-not-allowed" 
+                      : "bg-gradient-to-r from-[#6a7fdb] to-[#4a5fdb] text-white shadow-md hover:shadow-[#6a7fdb]/40"
+                  }`}
+                >
+                  {notifLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <span>Get Insights</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
         <motion.div 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -214,7 +447,7 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* Visual Insights & Download Button (IMPROVED) */}
+        {/* Visual Insights & Download Button */}
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -231,10 +464,10 @@ export default function Home() {
                   nameKey="subject"
                   cx="50%"
                   cy="50%"
-                  innerRadius={80} // Make it a donut chart
-                  outerRadius={120} // Make it a donut chart
-                  paddingAngle={5} // Add padding between slices
-                  cornerRadius={10} // Rounded corners for slices
+                  innerRadius={80}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  cornerRadius={10}
                   fill="#8884d8"
                   labelLine={false}
                 >
@@ -242,20 +475,19 @@ export default function Home() {
                     <Cell 
                       key={`cell-${idx}`} 
                       fill={PIE_COLORS[idx % PIE_COLORS.length]} 
-                      stroke="#1a1a2e" // Add a stroke to match the background
+                      stroke="#1a1a2e"
                       strokeWidth={2}
                     />
                   ))}
                 </Pie>
-                {/* A second Pie to show the absent part for each subject */}
                 <Pie
                   data={attendanceStats}
                   dataKey="absentPercentage"
                   nameKey="subject"
                   cx="50%"
                   cy="50%"
-                  innerRadius={115} // Outer ring
-                  outerRadius={128} // Outer ring
+                  innerRadius={115}
+                  outerRadius={128}
                   fill="#82ca9d"
                   label={false}
                   paddingAngle={5}
@@ -264,7 +496,7 @@ export default function Home() {
                   {attendanceStats.map((entry, idx) => (
                     <Cell 
                       key={`cell-absent-${idx}`} 
-                      fill="#f87171" // Use a consistent absent color
+                      fill="#f87171"
                       stroke="#1a1a2e"
                       strokeWidth={2}
                     />
@@ -282,13 +514,14 @@ export default function Home() {
           </div>
           <div className="flex flex-col items-center gap-4">
             <h3 className="text-lg font-semibold text-[#6a7fdb]">Download Attendance Report</h3>
-            <CSVLink
-              data={csvData}
-              filename={`attendance_report_${studentData.studentRollNumber}.csv`}
-              className="px-6 py-2 bg-[#6a7fdb] text-white rounded-lg font-semibold shadow hover:bg-[#4a5fdb] transition"
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleDownloadPDF}
+              className="px-6 py-3 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fdb] text-white rounded-lg font-semibold shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
             >
-              Download CSV
-            </CSVLink>
+              📄 Download PDF Report
+            </motion.button>
           </div>
         </motion.div>
 
@@ -417,6 +650,67 @@ export default function Home() {
             </motion.div>
           )}
         </motion.div>
+
+        {/* Animated Modal Popup for Notification */}
+        <AnimatePresence>
+          {showNotifModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 100 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 100 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                className="bg-[#1a1a2e] rounded-2xl p-8 border-2 border-[#6a7fdb] shadow-2xl max-w-lg w-full min-h-[300px] max-h-[80vh] overflow-y-auto relative"
+              >
+                <button
+                  onClick={() => setShowNotifModal(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-[#6a7fdb] text-2xl font-bold"
+                  aria-label="Close"
+                >
+                  &times;
+                </button>
+                <div className="flex flex-col items-center gap-4">
+                  <motion.div
+                    initial={{ scale: 0.7, rotate: -10 }}
+                    animate={{ scale: 1.1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                    className="bg-[#6a7fdb]/20 rounded-full p-4 mb-2 shadow-lg"
+                  >
+                    <BarChart2 className="text-[#6a7fdb] h-10 w-10 animate-bounce" />
+                  </motion.div>
+                  <h2 className="text-2xl font-bold text-[#6a7fdb] mb-2 text-center">
+                    🎉 AI Personalized Insight
+                  </h2>
+                  <div className="text-gray-200 text-lg text-center min-h-[80px]">
+                    {notifLoading ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-[#6a7fdb] animate-pulse"
+                      >
+                        Generating your insight...
+                      </motion.div>
+                    ) : (
+                      <motion.p
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="whitespace-pre-line"
+                      >
+                        {notification}
+                      </motion.p>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
