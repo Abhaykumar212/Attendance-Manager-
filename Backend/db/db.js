@@ -1,17 +1,14 @@
+require('dotenv').config()
 const mongoose = require('mongoose');
 
-const MONGO_URI = 'mongodb://127.0.0.1:27017/attendanceDB';
+const connectDB = async () => {
+    try {
+        await mongoose.connect(`${process.env.MONGO_URI}`);
+        console.log('MongoDB connected');
+    } catch (error) {
+        console.error('MongoDB connection failed:', error);
+        process.exit(1);
+    }
+};
 
-mongoose.connect(MONGO_URI);
-
-const db = mongoose.connection;
-
-db.on('connected', () => {
-    console.log('Connected to MongoDB at', MONGO_URI);
-});
-
-db.on('error', (err) => {
-    console.error('MongoDB connection error:', err);
-});
-
-module.exports = db;
+module.exports = connectDB;

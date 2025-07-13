@@ -9,9 +9,9 @@ const dataRoutes = require('./router/dataRoute');
 const studentRoute = require('./router/studentRoute');
 const subjectRoute = require('./router/subjectRoute');
 
-const db = require('./db/db');
+// const db = require('./db/db');
 require('dotenv').config();
-db.connect;
+// db.connect;
 
 const server = require('http').createServer(app)
 app.use(express.json());
@@ -29,21 +29,20 @@ app.use('/', userRoutes);
 app.use('/', dataRoutes);
 app.use('/api/students', studentRoute);
 app.use('/', subjectRoute);
-// ...existing code...
+
 const notificationRoutes = require('./router/notifications');
 app.use('/api/notifications', notificationRoutes);
-// ...existing code...
+
 app.use(express.static(path.join(__dirname, 'public')))
 
-server.listen(port, () => {
-  console.log(`Server listening on ${port}`);
-});
+const connectDB = require('./db/db');
 
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://127.0.0.1:27017/attendanceDB')
-.then(() => {
-    console.log('Connected to MongoDB locally');
-})
-.catch((err) => {
-    console.error('MongoDB connection error:', err);
-});
+connectDB()
+  .then(() => {
+    server.listen(port, () => {
+      console.log(`Server listening on port ${port}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection failed:', err);
+  });
