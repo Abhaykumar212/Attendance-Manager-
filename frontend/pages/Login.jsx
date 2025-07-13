@@ -22,7 +22,7 @@ export default function Login() {
       if (!data.error) {
         setIsLoggedIn(true);
         getUserData();
-        toast.success('👋 Welcome back!');
+        toast.success('Welcome back!');
         navigate('/home');
       }
     } catch (error) {

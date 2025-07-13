@@ -27,13 +27,22 @@ export default function Register() {
         role: isStudent ? 'student' : 'professor',
         ...(isStudent && { rollNo })
       };
-      
-      const { data } = await axios.post(`${backend_url}/register`, userData);
+
+      const response = await fetch(`${backend_url}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
       console.log(data);
       if (data.success) {
         setIsLoggedIn(true);
         getUserData();
-        toast.success('🎉 Registration successful! Please verify your email.', {
+        toast.success('Registration successful! Please verify your email.', {
           autoClose: 3000,
           hideProgressBar: false,
           closeOnClick: true,
@@ -46,10 +55,10 @@ export default function Register() {
         }, 2000);
       }
       else {
-        toast.error(data.message);
+        toast.error(data.error);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message);
+      toast.error(error);
     }
   };
 

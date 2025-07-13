@@ -50,7 +50,7 @@ const register = async (req, res) => {
   const { name, rollNo, email, password } = req.body;
 
   if (!name || !email || !password || (!email.split('@')[0].match(/^\d+$/) && !rollNo)) {
-    return res.status(400).json({ error: 'All required fields must be filled correctly' });
+    return res.status(400).json({ success: false, error: 'All required fields must be filled correctly' });
   }
 
   const allowedDomains = ['nitkkr.ac.in'];
