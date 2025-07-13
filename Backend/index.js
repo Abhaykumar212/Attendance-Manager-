@@ -18,11 +18,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const cors = require('cors')
+const allowedOrigins = ['https://attendance-manager-five-kappa.vercel.app'];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-    methods: ["GET", "POST"], 
-    allowedHeaders: ["Content-Type", "Authorization"]
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('CORS not allowed from this origin'), false);
+    }
+  },
+  credentials: true
 }));
 
 app.use('/', userRoutes);
