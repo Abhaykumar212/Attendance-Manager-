@@ -10,7 +10,9 @@ import {
   BarChart2, 
   Users,
   Calendar,
-  FileText
+  FileText,
+  TrendingUp,
+  Award
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -99,18 +101,46 @@ export default function Phome() {
   };
 
   return (
-    <div className="dark bg-[#0a0a1a] min-h-screen text-gray-100 overflow-hidden relative">
-      {/* Animated Background Gradient */}
-      <motion.div 
-        initial={{ backgroundPosition: '0% 50%' }}
-        animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-        transition={{ 
-          duration: 15, 
-          repeat: Infinity, 
-          ease: "linear" 
-        }}
-        className="absolute inset-0 bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] opacity-50 z-0"
-      />
+    <div className="bg-[#0f0f0f] min-h-screen text-gray-100 overflow-hidden relative">
+      {/* Floating Orbs Animation */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{
+              opacity: 0,
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+              scale: 0
+            }}
+            animate={{
+              opacity: [0, 0.4, 0],
+              scale: [0, 1, 0],
+              x: [
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth
+              ],
+              y: [
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight
+              ]
+            }}
+            transition={{
+              duration: Math.random() * 15 + 12,
+              repeat: Infinity,
+              delay: Math.random() * 8,
+              ease: "easeInOut"
+            }}
+            className={`absolute w-${Math.random() > 0.5 ? '48' : '40'} h-${Math.random() > 0.5 ? '48' : '40'} rounded-full blur-3xl ${
+              Math.random() > 0.7 ? 'bg-[#00e0ff]/10' : 
+              Math.random() > 0.4 ? 'bg-[#1ecbe1]/10' : 
+              'bg-[#4ade80]/10'
+            }`}
+          />
+        ))}
+      </div>
 
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Welcome Header */}
@@ -118,43 +148,59 @@ export default function Phome() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 100 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+          className="bg-[#1e1e1e]/80 backdrop-blur-xl rounded-3xl border border-[#333333]/50 p-8 mb-8 shadow-2xl relative overflow-hidden"
         >
-          <div className="flex items-center gap-6">
-            <motion.div 
-              whileHover={{ scale: 1.1 }}
-              className="w-20 h-20 bg-[#4a4e69]/20 rounded-full flex items-center justify-center"
-            >
-              <BookOpen className="text-[#6a7fdb] h-10 w-10" />
-            </motion.div>
-            <div>
-              <h1 className="text-4xl font-bold text-[#6a7fdb] tracking-tight">
-                Welcome, {professorData?.professorName || "Professor"}
-              </h1>
-              <p className="text-gray-400 text-lg">{professorEmail}</p>
-            </div>
-          </div>
+          {/* Gradient Border Top */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#00e0ff] via-[#1ecbe1] to-[#4ade80]" />
+          
+          {/* Subtle Glow Effects */}
+          <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#00e0ff]/8 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-[#1ecbe1]/8 rounded-full blur-3xl" />
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/add-attendance")}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-[#6a7fdb] text-white rounded-lg hover:bg-[#5a6fdb] transition-colors"
-            >
-              <UserCheck className="h-5 w-5" />
-              <span>Add Attendance</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowStudentModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-[#2c2c4a] text-gray-200 rounded-lg hover:bg-[#3c3c5a] transition-colors"
-            >
-              <ClipboardList className="h-5 w-5" />
-              <span>Review Attendance</span>
-            </motion.button>
+          <div className="relative z-10">
+            <div className="flex items-center gap-6 mb-6">
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 360 }}
+                transition={{ duration: 0.6 }}
+                className="w-20 h-20 bg-gradient-to-br from-[#00e0ff]/20 to-[#1ecbe1]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-[#00e0ff]/30"
+              >
+                <BookOpen className="text-[#00e0ff] h-10 w-10" />
+              </motion.div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent tracking-tight">
+                  Welcome, {professorData?.professorName || "Professor"}
+                </h1>
+                <p className="text-[#aaaaaa] text-lg">{professorEmail}</p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <motion.button
+                whileHover={{ 
+                  scale: 1.02,
+                  boxShadow: "0 0 30px rgba(0, 224, 255, 0.3)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/add-attendance")}
+                className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] font-semibold rounded-xl hover:from-[#1ecbe1] hover:to-[#4ade80] transition-all duration-300 shadow-lg hover:shadow-[#00e0ff]/25"
+              >
+                <UserCheck className="h-5 w-5" />
+                <span>Add Attendance</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ 
+                  scale: 1.02,
+                  backgroundColor: "rgba(51, 51, 51, 0.8)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowStudentModal(true)}
+                className="flex items-center justify-center gap-3 px-6 py-4 bg-[#2a2a2a]/50 backdrop-blur-sm text-[#ffffff] font-semibold rounded-xl border border-[#444444]/50 hover:border-[#00e0ff]/50 transition-all duration-300"
+              >
+                <ClipboardList className="h-5 w-5" />
+                <span>Review Attendance</span>
+              </motion.button>
+            </div>
           </div>
         </motion.div>
 
@@ -163,41 +209,61 @@ export default function Phome() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+          className="bg-[#1e1e1e]/80 backdrop-blur-xl rounded-3xl border border-[#333333]/50 p-8 mb-8 shadow-2xl relative overflow-hidden"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Class Summary</h2>
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="bg-[#2c2c4a] p-2 rounded-full"
-            >
-              <BarChart2 className="text-[#6a7fdb] h-6 w-6" />
-            </motion.div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <Calendar className="text-[#6a7fdb] h-6 w-6" />
-                <span className="text-xl font-bold text-[#6a7fdb]">{classStats.totalClasses}</span>
-              </div>
-              <h3 className="text-gray-400 text-sm">Total Classes</h3>
-            </motion.div>
-            {classStats.subjectStats.map((stat, index) => (
+          {/* Gradient Border Top */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#1ecbe1] via-[#4ade80] to-[#00ffd0]" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent tracking-tight">
+                Class Summary
+              </h2>
               <motion.div 
-                key={index}
-                whileHover={{ scale: 1.05 }}
-                className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
+                whileHover={{ scale: 1.1, rotate: 360 }}
+                transition={{ duration: 0.6 }}
+                className="w-12 h-12 bg-gradient-to-br from-[#1ecbe1]/20 to-[#4ade80]/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-[#1ecbe1]/30"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <FileText className="text-[#6a7fdb] h-6 w-6" />
-                  <span className="text-xl font-bold text-[#6a7fdb]">{stat.count}</span>
-                </div>
-                <h3 className="text-gray-400 text-sm">{stat.subject} Classes</h3>
+                <BarChart2 className="text-[#1ecbe1] h-6 w-6" />
               </motion.div>
-            ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <motion.div 
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 0 30px rgba(0, 224, 255, 0.2)"
+                }}
+                className="bg-[#2a2a2a]/50 backdrop-blur-sm rounded-2xl border border-[#444444]/50 p-6 shadow-lg hover:border-[#00e0ff]/50 transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <Calendar className="text-[#00e0ff] h-8 w-8 group-hover:scale-110 transition-transform" />
+                  <span className="text-3xl font-bold bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] bg-clip-text text-transparent">
+                    {classStats.totalClasses}
+                  </span>
+                </div>
+                <h3 className="text-[#aaaaaa] text-sm font-medium">Total Classes</h3>
+              </motion.div>
+
+              {classStats.subjectStats.map((stat, index) => (
+                <motion.div 
+                  key={index}
+                  whileHover={{ 
+                    scale: 1.05,
+                    boxShadow: "0 0 30px rgba(30, 203, 225, 0.2)"
+                  }}
+                  className="bg-[#2a2a2a]/50 backdrop-blur-sm rounded-2xl border border-[#444444]/50 p-6 shadow-lg hover:border-[#1ecbe1]/50 transition-all duration-300 group"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <FileText className="text-[#1ecbe1] h-8 w-8 group-hover:scale-110 transition-transform" />
+                    <span className="text-3xl font-bold bg-gradient-to-r from-[#1ecbe1] to-[#4ade80] bg-clip-text text-transparent">
+                      {stat.count}
+                    </span>
+                  </div>
+                  <h3 className="text-[#aaaaaa] text-sm font-medium">{stat.subject} Classes</h3>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.div>
 
@@ -206,54 +272,67 @@ export default function Phome() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 100, delay: 0.4 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 shadow-2xl"
+          className="bg-[#1e1e1e]/80 backdrop-blur-xl rounded-3xl border border-[#333333]/50 p-8 shadow-2xl relative overflow-hidden"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Detailed Class Summary</h2>
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="bg-[#2c2c4a] p-2 rounded-full"
-            >
-              <Users className="text-[#6a7fdb] h-6 w-6" />
-            </motion.div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#3c3c5a]">
-              <thead>
-                <tr>
-                  {["Subject", "Date", "Actions"].map((header) => (
-                    <th 
-                      key={header} 
-                      className="px-6 py-3 bg-[#2c2c4a] text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
-                    >
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
-                {professorData?.completeClassData.map((cls, index) => (
-                  <motion.tr 
-                    key={index}
-                    whileHover={{ backgroundColor: '#2c2c4a' }}
-                    className="hover:bg-[#2c2c4a] transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">{cls.subject}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{cls.date}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedClass(cls)}
-                        className="text-[#6a7fdb] hover:text-[#6a7fdb]/70"
+          {/* Gradient Border Top */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#4ade80] via-[#00ffd0] to-[#00e0ff]" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent tracking-tight">
+                Detailed Class Summary
+              </h2>
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 360 }}
+                transition={{ duration: 0.6 }}
+                className="w-12 h-12 bg-gradient-to-br from-[#4ade80]/20 to-[#00ffd0]/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-[#4ade80]/30"
+              >
+                <Users className="text-[#4ade80] h-6 w-6" />
+              </motion.div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-[#333333]/50">
+                    {["Subject", "Date", "Actions"].map((header) => (
+                      <th 
+                        key={header} 
+                        className="px-6 py-4 text-left text-sm font-semibold text-[#aaaaaa] uppercase tracking-wider"
                       >
-                        View Attendance
-                      </motion.button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#333333]/30">
+                  {professorData?.completeClassData.map((cls, index) => (
+                    <motion.tr 
+                      key={index}
+                      whileHover={{ backgroundColor: 'rgba(42, 42, 42, 0.5)' }}
+                      className="hover:bg-[#2a2a2a]/50 transition-all duration-200"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#ffffff]">
+                        {cls.subject}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#aaaaaa]">
+                        {cls.date}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSelectedClass(cls)}
+                          className="text-[#00e0ff] hover:text-[#1ecbe1] font-medium transition-colors duration-200"
+                        >
+                          View Attendance
+                        </motion.button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -266,38 +345,41 @@ export default function Phome() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 max-w-md w-full relative shadow-2xl"
+              className="bg-[#1e1e1e]/90 backdrop-blur-xl rounded-2xl border border-[#333333]/50 p-8 max-w-md w-full relative shadow-2xl"
             >
+              {/* Gradient Border Top */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#00e0ff] via-[#1ecbe1] to-[#4ade80] rounded-t-2xl" />
+              
               <button 
                 onClick={() => setShowStudentModal(false)}
-                className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#2c2c4a] transition-colors"
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#2a2a2a]/50 transition-colors"
               >
-                <X className="h-6 w-6 text-gray-400" />
+                <X className="h-6 w-6 text-[#aaaaaa]" />
               </button>
               
-              <h2 className="text-2xl font-bold text-[#6a7fdb] mb-6">Search Student</h2>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent mb-6">
+                Search Student
+              </h2>
               
               <form onSubmit={handleStudentSearch} className="space-y-6">
                 <div>
-                  <label htmlFor="studentRoll" className="block text-gray-400 mb-2">
+                  <label htmlFor="studentRoll" className="block text-[#aaaaaa] mb-2 font-medium">
                     Student Roll Number
                   </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666666] h-5 w-5 transition-colors group-focus-within:text-[#00e0ff]" />
                     <input
                       id="studentRoll"
                       type="text"
                       value={studentRoll}
                       onChange={(e) => setStudentRoll(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-[#2c2c4a] border border-[#3c3c5a] rounded-lg 
-                        focus:outline-none focus:ring-2 focus:ring-[#6a7fdb]/50 
-                        text-gray-200 placeholder-gray-500 transition-all"
+                      className="w-full pl-12 pr-4 py-4 bg-[#2a2a2a]/50 border border-[#444444]/50 rounded-xl text-[#ffffff] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#00e0ff]/50 focus:border-[#00e0ff]/50 transition-all duration-300 backdrop-blur-sm"
                       placeholder="Enter student roll number"
                       required
                     />
@@ -305,12 +387,13 @@ export default function Phome() {
                 </div>
                 
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    boxShadow: "0 0 30px rgba(0, 224, 255, 0.3)"
+                  }}
+                  whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="w-full py-3.5 bg-[#6a7fdb] text-white rounded-lg 
-                    font-semibold hover:bg-[#5a6fdb] focus:outline-none 
-                    focus:ring-2 focus:ring-[#6a7fdb]/30 transition-all"
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] font-semibold rounded-xl hover:from-[#1ecbe1] hover:to-[#4ade80] transition-all duration-300 shadow-lg hover:shadow-[#00e0ff]/25"
                 >
                   Search Student
                 </motion.button>
@@ -325,54 +408,57 @@ export default function Phome() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 max-w-2xl w-full relative shadow-2xl"
+              className="bg-[#1e1e1e]/90 backdrop-blur-xl rounded-2xl border border-[#333333]/50 p-8 max-w-2xl w-full relative shadow-2xl"
             >
+              {/* Gradient Border Top */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#1ecbe1] via-[#4ade80] to-[#00ffd0] rounded-t-2xl" />
+              
               <button 
                 onClick={() => setSelectedClass(null)}
-                className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#2c2c4a] transition-colors"
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#2a2a2a]/50 transition-colors"
               >
-                <X className="h-6 w-6 text-gray-400" />
+                <X className="h-6 w-6 text-[#aaaaaa]" />
               </button>
               
-              <h2 className="text-2xl font-bold text-[#6a7fdb] mb-2">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent mb-2">
                 {selectedClass.subject} - {selectedClass.date}
               </h2>
-              <p className="text-gray-400 mb-6">Attendance Records</p>
+              <p className="text-[#aaaaaa] mb-6">Attendance Records</p>
               
               <div className="overflow-y-auto max-h-[60vh]">
-                <table className="min-w-full divide-y divide-[#3c3c5a]">
-                  <thead className="sticky top-0 bg-[#2c2c4a]">
-                    <tr>
+                <table className="min-w-full">
+                  <thead className="sticky top-0 bg-[#2a2a2a]/80 backdrop-blur-sm">
+                    <tr className="border-b border-[#333333]/50">
                       {["Roll No.", "Student Name", "Status"].map((header) => (
                         <th 
                           key={header} 
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                          className="px-6 py-4 text-left text-sm font-semibold text-[#aaaaaa] uppercase tracking-wider"
                         >
                           {header}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
+                  <tbody className="divide-y divide-[#333333]/30">
                     {getClassAttendance(selectedClass.date, selectedClass.subject).map((student, index) => (
-                      <tr key={index} className="hover:bg-[#2c2c4a] transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">
+                      <tr key={index} className="hover:bg-[#2a2a2a]/50 transition-colors duration-200">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#ffffff]">
                           {student.rollNumber}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#aaaaaa]">
                           {student.studentName}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             student.status === "present" 
-                              ? "bg-green-900/50 text-green-400" 
-                              : "bg-red-900/50 text-red-400"
+                              ? "bg-[#4ade80]/20 text-[#4ade80] border border-[#4ade80]/30" 
+                              : "bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30"
                           }`}>
                             {student.status}
                           </span>
@@ -392,60 +478,73 @@ export default function Phome() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 max-w-2xl w-full relative shadow-2xl"
+              className="bg-[#1e1e1e]/90 backdrop-blur-xl rounded-2xl border border-[#333333]/50 p-8 max-w-2xl w-full relative shadow-2xl"
             >
+              {/* Gradient Border Top */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#4ade80] via-[#00ffd0] to-[#00e0ff] rounded-t-2xl" />
+              
               <button 
                 onClick={() => setSelectedStudent(null)}
-                className="absolute top-4 right-4 p-1 rounded-full hover:bg-[#2c2c4a] transition-colors"
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#2a2a2a]/50 transition-colors"
               >
-                <X className="h-6 w-6 text-gray-400" />
+                <X className="h-6 w-6 text-[#aaaaaa]" />
               </button>
               
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-[#4a4e69]/20 rounded-full flex items-center justify-center">
-                  <UserCheck className="text-[#6a7fdb] h-8 w-8" />
-                </div>
+              <div className="flex items-center gap-6 mb-8">
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: 360 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-16 h-16 bg-gradient-to-br from-[#4ade80]/20 to-[#00ffd0]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-[#4ade80]/30"
+                >
+                  <UserCheck className="text-[#4ade80] h-8 w-8" />
+                </motion.div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#6a7fdb]">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent">
                     {selectedStudent.student.studentName}
                   </h2>
-                  <p className="text-gray-400">Roll No: {selectedStudent.student.studentRollNumber}</p>
+                  <p className="text-[#aaaaaa]">Roll No: {selectedStudent.student.studentRollNumber}</p>
                 </div>
               </div>
               
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-[#6a7fdb]">Attendance Statistics</h3>
+                <h3 className="text-xl font-semibold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent">
+                  Attendance Statistics
+                </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {selectedStudent.stats.map((stat, index) => (
-                    <div key={index} className="bg-[#2c2c4a] rounded-xl p-4 border border-[#3c3c5a]">
-                      <h4 className="text-lg font-medium text-gray-200 mb-3">{stat.subject}</h4>
+                    <motion.div 
+                      key={index} 
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-[#2a2a2a]/50 backdrop-blur-sm rounded-xl p-6 border border-[#444444]/50 hover:border-[#00e0ff]/50 transition-all duration-300"
+                    >
+                      <h4 className="text-lg font-medium text-[#ffffff] mb-4">{stat.subject}</h4>
                       
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Total Classes:</span>
-                          <span className="font-medium">{stat.totalClasses}</span>
+                          <span className="text-[#aaaaaa]">Total Classes:</span>
+                          <span className="font-medium text-[#ffffff]">{stat.totalClasses}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Present:</span>
-                          <span className="text-green-400 font-medium">
+                          <span className="text-[#aaaaaa]">Present:</span>
+                          <span className="text-[#4ade80] font-medium">
                             {stat.presentClasses} ({stat.presentPercentage}%)
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400">Absent:</span>
-                          <span className="text-red-400 font-medium">
+                          <span className="text-[#aaaaaa]">Absent:</span>
+                          <span className="text-[#ef4444] font-medium">
                             {stat.totalClasses - stat.presentClasses} ({stat.absentPercentage}%)
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>

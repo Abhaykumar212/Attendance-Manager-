@@ -63,187 +63,222 @@ export default function Register() {
   };
 
   return (
-    <div className="dark bg-[#0a0a1a] min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden relative">
-      {/* Starry Background Effect */}
-      <div className="absolute inset-0 bg-[#0a0a1a] opacity-80 z-10 pointer-events-none">
-        {[...Array(100)].map((_, i) => (
-          <motion.div 
+    <div className="bg-[#0f0f0f] min-h-screen flex items-center justify-center px-4 py-12 overflow-hidden relative">
+      {/* Floating Orbs Animation */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
             key={i}
-            initial={{ 
-              opacity: 0, 
-              x: Math.random() * window.innerWidth, 
-              y: Math.random() * window.innerHeight 
+            initial={{
+              opacity: 0,
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+              scale: 0
             }}
-            animate={{ 
-              opacity: [0, 1, 0],
-              scale: [0.5, 1, 0.5]
+            animate={{
+              opacity: [0, 0.6, 0],
+              scale: [0, 1, 0],
+              x: [
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth,
+                Math.random() * window.innerWidth
+              ],
+              y: [
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight,
+                Math.random() * window.innerHeight
+              ]
             }}
             transition={{
-              duration: Math.random() * 3 + 2,
+              duration: Math.random() * 12 + 10,
               repeat: Infinity,
-              delay: Math.random() * 5
+              delay: Math.random() * 6,
+              ease: "easeInOut"
             }}
-            className="absolute w-1 h-1 bg-white/30 rounded-full"
+            className={`absolute w-${Math.random() > 0.5 ? '40' : '32'} h-${Math.random() > 0.5 ? '40' : '32'} rounded-full blur-xl ${
+              Math.random() > 0.7 ? 'bg-[#00e0ff]/15' : 
+              Math.random() > 0.4 ? 'bg-[#1ecbe1]/15' : 
+              'bg-[#00ffd0]/15'
+            }`}
           />
         ))}
       </div>
 
+      {/* Glassmorphism Register Card */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-[#1a1a2e] rounded-2xl border border-[#2c2c4a] p-8 shadow-2xl relative z-20"
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-lg relative z-10"
       >
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fbb] rounded-t-2xl" />
-        
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <motion.div 
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.6 }}
-            className="w-16 h-16 bg-[#6a7fdb]/10 rounded-full flex items-center justify-center"
-          >
-            {isStudent ? (
-              <GraduationCap className="text-[#6a7fdb] h-8 w-8" />
-            ) : (
-              <BookOpen className="text-[#6a7fdb] h-8 w-8" />
-            )}
-          </motion.div>
-          <div className="text-left">
-            <h1 className="text-3xl font-bold text-[#6a7fdb] tracking-tight">
-              {isStudent ? 'Student' : 'Professor'} Registration
-            </h1>
-            <p className="text-gray-400">NIT Kurukshetra</p>
+        <div className="bg-[#1e1e1e]/80 backdrop-blur-xl rounded-2xl border border-[#333333]/50 p-8 shadow-2xl relative overflow-hidden">
+          {/* Gradient Border Top */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#00e0ff] via-[#1ecbe1] to-[#00ffd0]" />
+          
+          {/* Subtle Glow Effects */}
+          <div className="absolute -top-32 -left-32 w-64 h-64 bg-[#00e0ff]/8 rounded-full blur-3xl" />
+          <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-[#1ecbe1]/8 rounded-full blur-3xl" />
+
+          <div className="relative z-10">
+            {/* Header with Role Icon */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex items-center justify-center gap-4 mb-8"
+            >
+              <motion.div 
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.6 }}
+                className="w-16 h-16 bg-gradient-to-br from-[#00e0ff]/20 to-[#1ecbe1]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-[#00e0ff]/30"
+              >
+                {isStudent ? (
+                  <GraduationCap className="text-[#00e0ff] h-8 w-8" />
+                ) : (
+                  <BookOpen className="text-[#1ecbe1] h-8 w-8" />
+                )}
+              </motion.div>
+              <div className="text-left">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent tracking-tight">
+                  {isStudent ? 'Student' : 'Professor'} Registration
+                </h1>
+                <p className="text-[#aaaaaa] text-lg">NIT Kurukshetra</p>
+              </div>
+            </motion.div>
+
+            {/* Role Toggle */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mb-8"
+            >
+              <div className="flex items-center justify-center space-x-2 bg-[#2a2a2a]/50 backdrop-blur-sm rounded-2xl p-1.5 border border-[#444444]/50">
+                <button
+                  type="button"
+                  onClick={() => setIsStudent(true)}
+                  className={`flex-1 py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 font-medium
+                    ${isStudent 
+                      ? 'bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] shadow-lg shadow-[#00e0ff]/25' 
+                      : 'text-[#aaaaaa] hover:bg-[#333333]/50 hover:text-[#ffffff]'}`}
+                >
+                  <GraduationCap className="h-5 w-5" />
+                  <span>Student</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsStudent(false)}
+                  className={`flex-1 py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 font-medium
+                    ${!isStudent 
+                      ? 'bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] shadow-lg shadow-[#00e0ff]/25' 
+                      : 'text-[#aaaaaa] hover:bg-[#333333]/50 hover:text-[#ffffff]'}`}
+                >
+                  <BookOpen className="h-5 w-5" />
+                  <span>Professor</span>
+                </button>
+              </div>
+            </motion.div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {['name', 'rollNo', 'email', 'password'].map((field, index) => {
+                if (field === 'rollNo' && !isStudent) return null;
+                
+                const fieldConfig = {
+                  name: {
+                    label: 'Full Name',
+                    icon: User,
+                    type: 'text',
+                    placeholder: 'Enter your full name',
+                    value: name,
+                    onChange: setName
+                  },
+                  rollNo: {
+                    label: 'Roll Number',
+                    icon: BookOpen,
+                    type: 'text',
+                    placeholder: 'Enter your roll number',
+                    value: rollNo,
+                    onChange: setRollNo
+                  },
+                  email: {
+                    label: 'College Email',
+                    icon: Mail,
+                    type: 'email',
+                    placeholder: 'Enter your college email',
+                    value: email,
+                    onChange: setEmail
+                  },
+                  password: {
+                    label: 'Password',
+                    icon: Lock,
+                    type: 'password',
+                    placeholder: 'Create a strong password',
+                    value: password,
+                    onChange: setPassword
+                  }
+                }[field];
+
+                return (
+                  <motion.div 
+                    key={field}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + (index * 0.1), duration: 0.5 }}
+                  >
+                    <label htmlFor={field} className="block text-[#aaaaaa] mb-2 font-medium">
+                      {fieldConfig.label}
+                    </label>
+                    <div className="relative group">
+                      <fieldConfig.icon className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666666] h-5 w-5 transition-colors group-focus-within:text-[#00e0ff]" />
+                      <input
+                        id={field}
+                        type={fieldConfig.type}
+                        value={fieldConfig.value}
+                        onChange={(e) => fieldConfig.onChange(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 bg-[#2a2a2a]/50 border border-[#444444]/50 rounded-xl text-[#ffffff] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#00e0ff]/50 focus:border-[#00e0ff]/50 transition-all duration-300 backdrop-blur-sm"
+                        placeholder={fieldConfig.placeholder}
+                        required
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+                whileHover={{ 
+                  scale: 1.02,
+                  boxShadow: "0 0 30px rgba(0, 224, 255, 0.3)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] font-semibold rounded-xl hover:from-[#1ecbe1] hover:to-[#00ffd0] transition-all duration-300 shadow-lg hover:shadow-[#00e0ff]/25 group"
+              >
+                <span>Create Account</span>
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </motion.button>
+            </form>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+              className="text-center mt-8 pt-6 border-t border-[#333333]/50"
+            >
+              <span className="text-[#aaaaaa]">
+                Already have an account?{' '}
+                <button
+                  onClick={() => navigate('/login')}
+                  className="text-[#00e0ff] hover:text-[#1ecbe1] font-medium transition-colors duration-200"
+                >
+                  Sign in
+                </button>
+              </span>
+            </motion.div>
           </div>
         </div>
-
-        {/* Role Toggle */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-center space-x-2 bg-[#2c2c4a] rounded-full p-1 border border-[#3c3c5a]">
-            <button
-              type="button"
-              onClick={() => setIsStudent(true)}
-              className={`flex-1 py-2.5 px-4 rounded-full transition-all duration-300 flex items-center justify-center space-x-2 
-                ${isStudent 
-                  ? 'bg-[#6a7fdb] text-white shadow-lg shadow-[#6a7fdb]/30' 
-                  : 'text-gray-400 hover:bg-[#3c3c5a]'}`}
-            >
-              <GraduationCap className="h-5 w-5" />
-              <span className="font-medium">Student</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsStudent(false)}
-              className={`flex-1 py-2.5 px-4 rounded-full transition-all duration-300 flex items-center justify-center space-x-2 
-                ${!isStudent 
-                  ? 'bg-[#6a7fdb] text-white shadow-lg shadow-[#6a7fdb]/30' 
-                  : 'text-gray-400 hover:bg-[#3c3c5a]'}`}
-            >
-              <BookOpen className="h-5 w-5" />
-              <span className="font-medium">Professor</span>
-            </button>
-          </div>
-        </motion.div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {['name', 'rollNo', 'email', 'password'].map((field) => {
-            if (field === 'rollNo' && !isStudent) return null;
-            
-            const fieldConfig = {
-              name: {
-                label: 'Full Name',
-                icon: User,
-                type: 'text',
-                placeholder: 'Enter your full name',
-                value: name,
-                onChange: setName
-              },
-              rollNo: {
-                label: 'Roll Number',
-                icon: BookOpen,
-                type: 'text',
-                placeholder: 'Enter your roll number',
-                value: rollNo,
-                onChange: setRollNo
-              },
-              email: {
-                label: 'College Email',
-                icon: Mail,
-                type: 'email',
-                placeholder: 'Enter your college email',
-                value: email,
-                onChange: setEmail
-              },
-              password: {
-                label: 'Password',
-                icon: Lock,
-                type: 'password',
-                placeholder: 'Create a strong password',
-                value: password,
-                onChange: setPassword
-              }
-            }[field];
-
-            return (
-              <motion.div 
-                key={field}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: field === 'name' ? 0.3 : 0.4 }}
-              >
-                <label htmlFor={field} className="block text-gray-400 mb-2">
-                  {fieldConfig.label}
-                </label>
-                <div className="relative">
-                  <fieldConfig.icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <input
-                    id={field}
-                    type={fieldConfig.type}
-                    value={fieldConfig.value}
-                    onChange={(e) => fieldConfig.onChange(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-[#2c2c4a] border border-[#3c3c5a] rounded-lg 
-                      focus:outline-none focus:ring-2 focus:ring-[#6a7fdb]/50 
-                      text-gray-200 placeholder-gray-500 transition-all"
-                    placeholder={fieldConfig.placeholder}
-                    required
-                  />
-                </div>
-              </motion.div>
-            );
-          })}
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            type="submit"
-            className="w-full py-3.5 bg-[#6a7fdb] text-white rounded-lg 
-              font-semibold hover:bg-[#5a6fdb] focus:outline-none 
-              focus:ring-2 focus:ring-[#6a7fdb]/30 transition-all 
-              flex items-center justify-center space-x-2 group"
-          >
-            <span>Create Account</span>
-            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </motion.button>
-        </form>
-
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-6 text-center text-gray-400 text-sm"
-        >
-          Already have an account?{' '}
-          <button 
-            onClick={() => navigate('/login')} 
-            className="text-[#6a7fdb] hover:underline font-medium"
-          >
-            Sign in
-          </button>
-        </motion.p>
       </motion.div>
     </div>
   );
