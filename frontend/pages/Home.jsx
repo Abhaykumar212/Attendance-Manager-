@@ -62,7 +62,7 @@ export default function Home() {
     setNotification("");
     setShowNotifModal(false);
     try {
-      const response = await axios.post(`${backend_url}/notifications/personalized`, {
+      const response = await axios.post(`${backend_url}/api/notifications/personalized`, {
         studentData: {
           name: studentData.studentName,
         },
