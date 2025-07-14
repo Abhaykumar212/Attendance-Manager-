@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Search, BookOpen, X, BarChart2, Bell } from "lucide-react";
+import { Search, BookOpen, X, BarChart2, Bell, Download, Zap, TrendingUp, Clock, Users, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord } from "../dummyData/data.js";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 import axios from "axios";
 
 // Custom tooltip component for the PieChart
@@ -15,34 +15,19 @@ const CustomTooltip = ({ active, payload }) => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#2c2c4a] p-4 rounded-xl shadow-lg border border-[#3c3c5a] backdrop-blur-md"
+        className="bg-[#1e1e1e]/95 backdrop-blur-xl p-4 rounded-xl shadow-2xl border border-[#2d2d2d]/80"
       >
-        <p className="text-lg font-bold text-[#6a7fdb]">{data.subject}</p>
-        <p className="text-sm text-gray-300">
-          <span className="font-semibold text-green-400">Present:</span> {data.presentPercentage}% ({data.presentClasses} classes)
+        <p className="text-lg font-bold text-[#00e0ff]">{data.subject}</p>
+        <p className="text-sm text-[#aaaaaa]">
+          <span className="font-semibold text-[#4ade80]">Present:</span> {data.presentPercentage}% ({data.presentClasses} classes)
         </p>
-        <p className="text-sm text-gray-300">
-          <span className="font-semibold text-red-400">Absent:</span> {data.absentPercentage}% ({data.totalClasses - data.presentClasses} classes)
+        <p className="text-sm text-[#aaaaaa]">
+          <span className="font-semibold text-[#f87171]">Absent:</span> {data.absentPercentage}% ({data.totalClasses - data.presentClasses} classes)
         </p>
       </motion.div>
     );
   }
   return null;
-};
-
-const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, index, subject }) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx;
-  const y = cy;
-
-  return (
-    <text x={x} y={y} fill="#e0e0e0" textAnchor="middle" dominantBaseline="central">
-      <tspan x={x} dy="-0.5em" fontWeight="bold" fontSize="16px" fill="#6a7fdb">{subject}</tspan>
-      <tspan x={x} dy="1.5em" fontSize="12px" fill="#a0a0a0">
-        {value}%
-      </tspan>
-    </text>
-  );
 };
 
 export default function Home() {
@@ -142,7 +127,7 @@ export default function Home() {
       let yPosition = 20;
       
       doc.setFontSize(20);
-      doc.setTextColor(106, 127, 219);
+      doc.setTextColor(0, 224, 255);
       doc.text("Attendance Report", 14, yPosition);
       yPosition += 15;
       
@@ -156,7 +141,7 @@ export default function Home() {
       yPosition += 20;
       
       doc.setFontSize(16);
-      doc.setTextColor(106, 127, 219);
+      doc.setTextColor(0, 224, 255);
       doc.text("Attendance Summary", 14, yPosition);
       yPosition += 15;
       
@@ -179,7 +164,7 @@ export default function Home() {
       yPosition += 15;
       
       doc.setFontSize(16);
-      doc.setTextColor(106, 127, 219);
+      doc.setTextColor(0, 224, 255);
       doc.text("Detailed Attendance Records", 14, yPosition);
       yPosition += 15;
 
@@ -282,181 +267,225 @@ export default function Home() {
     currentPage * itemsPerPage
   );
 
-  const PIE_COLORS = ["#34d399", "#f87171", "#60a5fa", "#facc15", "#c084fc"];
+  const PIE_COLORS = ["#4ade80", "#f87171", "#00e0ff", "#facc15", "#1ecbe1"];
+
+  const overallAttendance = useMemo(() => {
+    if (!studentData?.attendanceRecord) return 0;
+    const totalClasses = studentData.attendanceRecord.length;
+    const presentClasses = studentData.attendanceRecord.filter(record => record.status === 'present').length;
+    return totalClasses > 0 ? ((presentClasses / totalClasses) * 100).toFixed(1) : 0;
+  }, [studentData]);
 
   return (
-    <div className="dark bg-[#0a0a1a] min-h-screen text-gray-100 overflow-hidden">
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="container mx-auto px-4 py-8 relative"
+    <div className="min-h-screen bg-[#0f0f0f] text-[#eaeaea] overflow-hidden">
+      {/* Floating Header */}
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="fixed top-0 left-0 right-0 z-50 mx-4 mt-4"
       >
-        {/* Enhanced Notification Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className="sticky top-4 z-40 mx-auto mb-8 w-full max-w-4xl px-4"
-        >
-          <div className="relative">
-            {/* Gradient border effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fdb] rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-200"></div>
-            
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="relative bg-[#1a1a2e] rounded-xl border border-[#2c2c4a] p-4 shadow-lg overflow-hidden"
-            >
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <motion.div 
-                    animate={{ 
-                      scale: [1, 1.1, 1],
-                      rotate: [0, 5, -5, 0]
-                    }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      repeatType: "reverse", 
-                      duration: 2 
-                    }}
-                    className="bg-gradient-to-br from-[#6a7fdb] to-[#4a5fdb] p-3 rounded-lg"
-                  >
-                    <Bell className="h-6 w-6 text-white" />
-                  </motion.div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-[#6a7fdb]">AI-Powered Insights</h3>
-                    <p className="text-sm text-gray-400">Get personalized attendance recommendations</p>
-                  </div>
+        <div className="bg-[#1e1e1e]/20 backdrop-blur-2xl border border-[#2d2d2d]/30 rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <motion.div 
+                whileHover={{ scale: 1.05, rotate: 5 }}
+                className="flex items-center gap-3"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-[#00e0ff] to-[#1ecbe1] rounded-xl flex items-center justify-center shadow-lg shadow-[#00e0ff]/20">
+                  <BookOpen className="w-5 h-5 text-[#0f0f0f]" />
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleGetNotification}
-                  disabled={notifLoading}
-                  className={`px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all ${
-                    notifLoading 
-                      ? "bg-[#4a5fdb] text-gray-300 cursor-not-allowed" 
-                      : "bg-gradient-to-r from-[#6a7fdb] to-[#4a5fdb] text-white shadow-md hover:shadow-[#6a7fdb]/40"
-                  }`}
-                >
-                  {notifLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <span>Get Insights</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </>
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
-        >
-          <div className="flex items-center gap-6">
-            <motion.div 
-              whileHover={{ scale: 1.1 }}
-              className="w-20 h-20 bg-[#4a4e69]/20 rounded-full flex items-center justify-center"
-            >
-              <BookOpen className="text-[#6a7fdb] h-10 w-10" />
-            </motion.div>
-            <div>
-              <h1 className="text-4xl font-bold text-[#6a7fdb] tracking-tight">
-                Welcome, {studentData.studentName}
-              </h1>
-              <p className="text-gray-400 text-lg">Roll Number: {studentData.studentRollNumber}</p>
+                <div>
+                  <h1 className="text-xl font-bold text-[#ffffff] tracking-tight">AttendanceHub</h1>
+                  <p className="text-sm text-[#999999]">Student Dashboard</p>
+                </div>
+              </motion.div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleGetNotification}
+                disabled={notifLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] rounded-xl font-semibold shadow-lg shadow-[#00e0ff]/20 hover:shadow-[#00e0ff]/40 transition-all duration-300 disabled:opacity-50"
+              >
+                {notifLoading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Zap className="w-4 h-4" />
+                  </motion.div>
+                ) : (
+                  <Bell className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">AI Insights</span>
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDownloadPDF}
+                className="flex items-center gap-2 px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-[#2d2d2d] text-[#eaeaea] rounded-xl font-medium hover:bg-[#1e1e1e]/80 hover:border-[#00e0ff]/30 transition-all duration-300"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Report</span>
+              </motion.button>
             </div>
           </div>
-        </motion.div>
+        </div>
+      </motion.header>
 
-        <motion.div 
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl"
+      {/* Main Content */}
+      <div className="pt-24 px-4 pb-8">
+        {/* Hero Section - Asymmetric Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+          {/* Welcome Card */}
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-8 bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-3xl p-8 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#00e0ff]/10 to-[#1ecbe1]/10 rounded-full blur-2xl"></div>
+            <div className="relative z-10">
+              <motion.h2 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-4xl font-bold text-[#ffffff] mb-2"
+              >
+                Welcome back, {studentData.studentName}
+              </motion.h2>
+              <motion.p 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-[#aaaaaa] text-lg mb-6"
+              >
+                Roll Number: {studentData.studentRollNumber}
+              </motion.p>
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#4ade80]" />
+                  <span className="text-[#999999]">Overall Attendance</span>
+                </div>
+                <div className="text-3xl font-bold text-[#4ade80]">{overallAttendance}%</div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="lg:col-span-4 space-y-4"
+          >
+            <div className="bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <Users className="w-6 h-6 text-[#00e0ff]" />
+                <span className="text-2xl font-bold text-[#ffffff]">{attendanceStats.length}</span>
+              </div>
+              <p className="text-[#aaaaaa] text-sm">Active Subjects</p>
+            </div>
+            
+            <div className="bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <Clock className="w-6 h-6 text-[#1ecbe1]" />
+                <span className="text-2xl font-bold text-[#ffffff]">{filteredRecords.length}</span>
+              </div>
+              <p className="text-[#aaaaaa] text-sm">Total Sessions</p>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Subject Cards - Asymmetric Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mb-8"
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Attendance Summary</h2>
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="bg-[#2c2c4a] p-2 rounded-full"
-            >
-              <BarChart2 className="text-[#6a7fdb] h-6 w-6" />
-            </motion.div>
+            <h3 className="text-2xl font-bold text-[#ffffff]">Subject Performance</h3>
+            <BarChart2 className="w-6 h-6 text-[#00e0ff]" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <AnimatePresence>
-              {attendanceStats.map((stat, index) => (
-                <motion.div 
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 300, 
-                    damping: 20,
-                    delay: index * 0.1 
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-[#2c2c4a] rounded-2xl border border-[#3c3c5a] p-5 shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
-                >
-                  <h3 className="text-xl font-semibold tracking-wide text-[#6a7fdb] mb-2">{stat.subject}</h3>
-                  <p className="text-sm text-gray-400 mb-3">Prof: {stat.professorName}</p>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Present:</span>
-                      <span className="font-semibold text-green-400">{stat.presentPercentage}%</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Absent:</span>
-                      <span className="font-semibold text-red-400">{stat.absentPercentage}%</span>
-                    </div>
-                    <div className="relative h-3 bg-rose-500/20 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${stat.presentPercentage}%` }}
-                        transition={{ 
-                          duration: 0.7, 
-                          type: "tween" 
-                        }}
-                        className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] animate-pulse"
-                      />
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {stat.presentClasses} / {stat.totalClasses} classes
-                    </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {attendanceStats.map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, y: -5 }}
+                className="bg-[#1e1e1e]/60 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-2xl p-6 hover:border-[#00e0ff]/30 transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${stat.presentPercentage >= 75 ? 'bg-[#4ade80]' : 'bg-[#f87171]'}`}></div>
+                    <h4 className="font-semibold text-[#ffffff] group-hover:text-[#00e0ff] transition-colors">{stat.subject}</h4>
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  {stat.presentPercentage >= 75 ? (
+                    <CheckCircle2 className="w-5 h-5 text-[#4ade80]" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-[#f87171]" />
+                  )}
+                </div>
+                
+                <p className="text-sm text-[#aaaaaa] mb-3">Prof: {stat.professorName}</p>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-[#999999]">Attendance</span>
+                    <span className={`font-bold ${stat.presentPercentage >= 75 ? 'text-[#4ade80]' : 'text-[#f87171]'}`}>
+                      {stat.presentPercentage}%
+                    </span>
+                  </div>
+                  
+                  <div className="relative h-2 bg-[#2d2d2d] rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${stat.presentPercentage}%` }}
+                      transition={{ duration: 1, delay: index * 0.1 }}
+                      className={`absolute inset-0 rounded-full ${
+                        stat.presentPercentage >= 75 
+                          ? 'bg-gradient-to-r from-[#4ade80] to-[#00ffd0]' 
+                          : 'bg-gradient-to-r from-[#f87171] to-[#ff6b6b]'
+                      }`}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between text-xs text-[#aaaaaa]">
+                    <span>Present: {stat.presentClasses}</span>
+                    <span>Total: {stat.totalClasses}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
 
-        {/* Visual Insights & Download Button */}
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100, delay: 0.3 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 mb-8 shadow-2xl flex flex-col lg:flex-row gap-8 items-center"
-        >
-          <div className="flex-1 w-full flex flex-col ">
-            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb] mb-4">Visual Insights</h2>
+        {/* Analytics Section - Split Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Pie Chart */}
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="lg:col-span-2 bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-3xl p-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-[#ffffff]">Attendance Distribution</h3>
+              <div className="w-2 h-2 bg-[#00e0ff] rounded-full animate-pulse"></div>
+            </div>
+            
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -465,143 +494,163 @@ export default function Home() {
                   nameKey="subject"
                   cx="50%"
                   cy="50%"
-                  innerRadius={80}
-                  outerRadius={120}
-                  paddingAngle={5}
-                  cornerRadius={10}
-                  fill="#8884d8"
-                  labelLine={false}
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  cornerRadius={8}
                 >
                   {attendanceStats.map((entry, idx) => (
                     <Cell 
                       key={`cell-${idx}`} 
                       fill={PIE_COLORS[idx % PIE_COLORS.length]} 
-                      stroke="#1a1a2e"
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Pie>
-                <Pie
-                  data={attendanceStats}
-                  dataKey="absentPercentage"
-                  nameKey="subject"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={115}
-                  outerRadius={128}
-                  fill="#82ca9d"
-                  label={false}
-                  paddingAngle={5}
-                  cornerRadius={10}
-                >
-                  {attendanceStats.map((entry, idx) => (
-                    <Cell 
-                      key={`cell-absent-${idx}`} 
-                      fill="#f87171"
-                      stroke="#1a1a2e"
+                      stroke="#1e1e1e"
                       strokeWidth={2}
                     />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
                 <Legend 
-                  layout="horizontal" 
                   verticalAlign="bottom" 
-                  align="center" 
-                  wrapperStyle={{ paddingTop: '20px' }}
+                  height={36}
+                  iconType="circle"
+                  wrapperStyle={{ 
+                    paddingTop: '20px',
+                    color: '#aaaaaa'
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <div className="flex flex-col items-center gap-4">
-            <h3 className="text-lg font-semibold text-[#6a7fdb]">Download Attendance Report</h3>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleDownloadPDF}
-              className="px-6 py-3 bg-gradient-to-r from-[#6a7fdb] to-[#4a5fdb] text-white rounded-lg font-semibold shadow-lg hover:shadow-[#6a7fdb]/30 transition-all duration-300"
-            >
-              📄 Download PDF Report
-            </motion.button>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <motion.div 
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100, delay: 0.4 }}
-          className="bg-[#1a1a2e] rounded-3xl border border-[#2c2c4a] p-6 shadow-2xl"
+          {/* Performance Metrics */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="space-y-4"
+          >
+            <div className="bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#4ade80] to-[#00ffd0] rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#0f0f0f]" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#ffffff]">Above 75%</h4>
+                  <p className="text-sm text-[#aaaaaa]">Good standing</p>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-[#4ade80]">
+                {attendanceStats.filter(stat => stat.presentPercentage >= 75).length}
+              </div>
+            </div>
+
+            <div className="bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#f87171] to-[#ff6b6b] rounded-lg flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-[#0f0f0f]" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#ffffff]">Below 75%</h4>
+                  <p className="text-sm text-[#aaaaaa]">Needs attention</p>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-[#f87171]">
+                {attendanceStats.filter(stat => stat.presentPercentage < 75).length}
+              </div>
+            </div>
+
+            <div className="bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#00e0ff] to-[#1ecbe1] rounded-lg flex items-center justify-center">
+                  <BarChart2 className="w-5 h-5 text-[#0f0f0f]" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#ffffff]">Average</h4>
+                  <p className="text-sm text-[#aaaaaa]">Overall performance</p>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-[#00e0ff]">
+                {attendanceStats.length > 0 ? 
+                  (attendanceStats.reduce((sum, stat) => sum + stat.presentPercentage, 0) / attendanceStats.length).toFixed(1) : 0
+                }%
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Detailed Records */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1 }}
+          className="bg-[#1e1e1e]/40 backdrop-blur-xl border border-[#2d2d2d]/50 rounded-3xl p-8"
         >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-2xl font-semibold tracking-wide text-[#6a7fdb]">Detailed Attendance</h2>
-            <motion.div 
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="relative w-full sm:w-64"
-            >
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search records..."
-                className="w-full pl-10 pr-10 py-2.5 bg-[#2c2c4a] border border-[#3c3c5a] text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6a7fdb]/50 transition-all duration-300"
-              />
-              {searchTerm && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.7 }}
-                >
-                  <X 
-                    onClick={() => setSearchTerm("")} 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer h-5 w-5 hover:text-[#6a7fdb] transition-colors" 
-                  />
-                </motion.div>
-              )}
-            </motion.div>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-2xl font-bold text-[#ffffff] mb-2">Detailed Records</h3>
+              <p className="text-[#aaaaaa]">Complete attendance history</p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999999] w-4 h-4" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search records..."
+                  className="w-72 pl-10 pr-10 py-3 bg-[#1e1e1e]/60 backdrop-blur-sm border border-[#2d2d2d] text-[#eaeaea] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00e0ff]/50 focus:border-[#00e0ff]/50 transition-all duration-300"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#999999] hover:text-[#00e0ff] transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#3c3c5a]">
+            <table className="w-full">
               <thead>
-                <tr>
+                <tr className="border-b border-[#2d2d2d]/50">
                   {["Subject", "Professor", "Date", "Day", "Status"].map((header) => (
                     <th 
                       key={header} 
-                      className="px-6 py-3 bg-[#2c2c4a] text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                      className="text-left py-4 px-6 font-semibold text-[#aaaaaa] uppercase tracking-wider text-sm"
                     >
                       {header}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-[#1a1a2e] divide-y divide-[#3c3c5a]">
+              <tbody>
                 <AnimatePresence>
                   {currentRecords.map((record, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ 
-                        type: "spring", 
-                        stiffness: 300, 
-                        damping: 20,
-                        delay: index * 0.05 
-                      }}
-                      className="hover:bg-[#2c2c4a] transition-colors duration-200"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className="border-b border-[#2d2d2d]/20 hover:bg-[#1e1e1e]/20 transition-all duration-200"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">{record.subject}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.professorName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{record.day}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${record.status === "present" ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400"}`}>
+                      <td className="py-4 px-6 font-medium text-[#ffffff]">{record.subject}</td>
+                      <td className="py-4 px-6 text-[#aaaaaa]">{record.professorName}</td>
+                      <td className="py-4 px-6 text-[#aaaaaa]">{record.date}</td>
+                      <td className="py-4 px-6 text-[#aaaaaa]">{record.day}</td>
+                      <td className="py-4 px-6">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          record.status === "present" 
+                            ? "bg-[#4ade80]/20 text-[#4ade80] border border-[#4ade80]/30" 
+                            : "bg-[#f87171]/20 text-[#f87171] border border-[#f87171]/30"
+                        }`}>
                           {record.status}
                         </span>
                       </td>
@@ -612,107 +661,96 @@ export default function Home() {
             </table>
           </div>
 
+          {/* Pagination */}
           {totalPages > 1 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="flex justify-center items-center space-x-2 mt-6"
-            >
+            <div className="flex justify-center items-center gap-2 mt-8">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 rounded-full bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a] disabled:opacity-50 transition-all"
+                className="px-4 py-2 rounded-lg bg-[#1e1e1e]/60 text-[#aaaaaa] hover:bg-[#1e1e1e]/80 hover:text-[#ffffff] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 Previous
               </motion.button>
+              
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <motion.button
                   key={page}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-4 py-2 rounded-full transition ${currentPage === page ? "bg-[#6a7fdb] text-white" : "bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a]"}`}
+                  className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                    currentPage === page 
+                      ? "bg-[#00e0ff] text-[#0f0f0f] font-semibold shadow-lg shadow-[#00e0ff]/20" 
+                      : "bg-[#1e1e1e]/60 text-[#aaaaaa] hover:bg-[#1e1e1e]/80 hover:text-[#ffffff]"
+                  }`}
                 >
                   {page}
                 </motion.button>
               ))}
+              
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 rounded-full bg-[#2c2c4a] text-gray-400 hover:bg-[#3c3c5a] disabled:opacity-50 transition-all"
+                className="px-4 py-2 rounded-lg bg-[#1e1e1e]/60 text-[#aaaaaa] hover:bg-[#1e1e1e]/80 hover:text-[#ffffff] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 Next
               </motion.button>
-            </motion.div>
+            </div>
           )}
         </motion.div>
+      </div>
 
-        {/* Animated Modal Popup for Notification */}
-        <AnimatePresence>
-          {showNotifModal && (
+      {/* AI Insights Modal */}
+      <AnimatePresence>
+        {showNotifModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f0f0f]/80 backdrop-blur-sm p-4"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#1e1e1e]/95 backdrop-blur-2xl border border-[#2d2d2d]/80 rounded-3xl p-8 max-w-lg w-full max-h-[80vh] overflow-y-auto relative shadow-2xl"
             >
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0, y: 100 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.8, opacity: 0, y: 100 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                className="bg-[#1a1a2e] rounded-2xl p-8 border-2 border-[#6a7fdb] shadow-2xl max-w-lg w-full min-h-[300px] max-h-[80vh] overflow-y-auto relative"
+              <button
+                onClick={() => setShowNotifModal(false)}
+                className="absolute top-4 right-4 text-[#aaaaaa] hover:text-[#00e0ff] transition-colors"
               >
-                <button
-                  onClick={() => setShowNotifModal(false)}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-[#6a7fdb] text-2xl font-bold"
-                  aria-label="Close"
+                <X className="w-6 h-6" />
+              </button>
+              
+              <div className="text-center">
+                <motion.div
+                  initial={{ scale: 0.8, rotate: -10 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  className="w-16 h-16 bg-gradient-to-br from-[#00e0ff] to-[#1ecbe1] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#00e0ff]/20"
                 >
-                  &times;
-                </button>
-                <div className="flex flex-col items-center gap-4">
-                  <motion.div
-                    initial={{ scale: 0.7, rotate: -10 }}
-                    animate={{ scale: 1.1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                    className="bg-[#6a7fdb]/20 rounded-full p-4 mb-2 shadow-lg"
+                  <Zap className="w-8 h-8 text-[#0f0f0f]" />
+                </motion.div>
+                
+                <h3 className="text-2xl font-bold text-[#ffffff] mb-4">AI Insights</h3>
+                
+                <div className="bg-[#1e1e1e]/40 backdrop-blur-sm border border-[#2d2d2d]/50 rounded-2xl p-6">
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-[#eaeaea] whitespace-pre-line leading-relaxed"
                   >
-                    <BarChart2 className="text-[#6a7fdb] h-10 w-10 animate-bounce" />
-                  </motion.div>
-                  <h2 className="text-2xl font-bold text-[#6a7fdb] mb-2 text-center">
-                    🎉 AI Personalized Insight
-                  </h2>
-                  <div className="text-gray-200 text-lg text-center min-h-[80px]">
-                    {notifLoading ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-[#6a7fdb] animate-pulse"
-                      >
-                        Generating your insight...
-                      </motion.div>
-                    ) : (
-                      <motion.p
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="whitespace-pre-line"
-                      >
-                        {notification}
-                      </motion.p>
-                    )}
-                  </div>
+                    {notification}
+                  </motion.p>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

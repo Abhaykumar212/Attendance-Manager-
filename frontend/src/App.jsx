@@ -18,7 +18,7 @@ export default function App(){
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
 
-                {/* <Route path="/home" element={<Home/>}></Route> */}
+                <Route path="/home" element={<Home/>}></Route>
                 <Route path="/" element={<Landing />} />
                 <Route path="/*" element={<Home />} />
                 <Route path="/phome" element={<Phome/>}></Route>

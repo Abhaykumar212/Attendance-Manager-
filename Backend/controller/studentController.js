@@ -21,10 +21,8 @@ const getStudents = async (req, res) => {
 
 const getStudentProfile = async (req, res) => {
     try {
-        // console.log(req.userData)
-        const studentRoll =  req.userData.rollNo.toString();
-        const student = await studentAttendance.findOne({ studentRollNumber: studentRoll });
-
+        const studentRoll =  req.userData.rollNo;
+        const student = await studentAttendance.find({ studentRollNumber: studentRoll });
         if (!student) {
             return res.status(404).json({ success: false, error: 'Student not found' });
         }
