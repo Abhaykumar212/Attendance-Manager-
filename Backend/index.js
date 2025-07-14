@@ -14,7 +14,9 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ CORS config
 const cors = require('cors');
 const allowedOrigins = [
-  'https://attendance-manager-five-kappa.vercel.app'
+  'https://attendance-manager-five-kappa.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
 ];
 
 app.use(cors({
@@ -24,7 +26,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      console.error('❌ Blocked by CORS:', origin);
+      console.error('Blocked by CORS:', origin);
       return callback(new Error('CORS not allowed from this origin'), false);
     }
   },
@@ -37,12 +39,14 @@ const dataRoutes = require('./router/dataRoute');
 const studentRoute = require('./router/studentRoute');
 const subjectRoute = require('./router/subjectRoute');
 const notificationRoutes = require('./router/notifications');
+const attendanceRoutes = require('./router/attendanceRoutes');
 
 app.use('/', userRoutes);
 app.use('/', dataRoutes);
 app.use('/api/students', studentRoute);
 app.use('/', subjectRoute);
 app.use('/api/notifications', notificationRoutes);
+app.use('/', attendanceRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
