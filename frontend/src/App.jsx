@@ -20,7 +20,7 @@ export default function App(){
 
                 {/* <Route path="/home" element={<Home/>}></Route> */}
                 <Route path="/" element={<Landing />} />
-                <Route path="/home" element={<Home />} />
+                <Route path="/*" element={<Home />} />
                 <Route path="/phome" element={<Phome/>}></Route>
                 <Route path="/register" element={<Register/>} />
                 <Route path="/verifymail" element={<VerifyMail/>} />

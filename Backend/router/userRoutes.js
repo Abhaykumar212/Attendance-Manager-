@@ -7,7 +7,7 @@ router.post('/register', register);
 router.post('/verifyemail',userAuth, verifyemail);
 router.post('/sendotp',userAuth, sendVerificationOTP);
 router.post('/login', login);
-router.post('/attendance', attendanceStoreInDB);
+router.post('/attendancee', attendanceStoreInDB);
 
 
 module.exports = router;
