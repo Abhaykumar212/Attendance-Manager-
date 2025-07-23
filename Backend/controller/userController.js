@@ -4,13 +4,14 @@ const attendanceModel = require('../model/attendance');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('../services/mailservice');
+const { getCookieConfig } = require('../config/production');
 
 const sendVerificationOTP = async (req, res, sendResponse = true, email, name, role) => {
   try {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expireAt = Date.now() + 10 * 60 * 1000;
 
-    const userModel = role === 'teacher' ? profModel : studentModel;
+    const userModel = role === 'professor' || role === 'admin' ? profModel : studentModel;
 
     await userModel.findOneAndUpdate(
       { email },
@@ -89,12 +90,7 @@ const register = async (req, res) => {
     await newUser.save();
 
     const token = jwt.sign({ email, role }, process.env.JWT_SECRET);
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    });
+    res.cookie('token', token, getCookieConfig());
 
     const welcomeMessage = {
       from: `"Attendance Manager Support" <${process.env.EMAIL}>`,
@@ -205,12 +201,7 @@ const login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ email, role: user.role }, process.env.JWT_SECRET);
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    });
+    res.cookie('token', token, getCookieConfig());
 
     return res.status(200).json({ message: 'Login successful' });
 
@@ -277,11 +268,7 @@ const getUserProfile = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    res.clearCookie('token', {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    });
+    res.clearCookie('token', getCookieConfig());
     return res.status(200).json({ message: 'Logout successful', success: true });
   } catch (err) {
     console.error('Logout error:', err);

@@ -6,6 +6,12 @@ const path = require('path');
 
 require('dotenv').config();
 
+// Import production helpers
+const { checkEnvironment } = require('./config/production');
+
+// Check environment on startup
+checkEnvironment();
+
 // Middleware
 app.use(cookieparser());
 app.use(express.json());
@@ -30,7 +36,10 @@ app.use(cors({
       return callback(new Error('CORS not allowed from this origin'), false);
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 // Routes
