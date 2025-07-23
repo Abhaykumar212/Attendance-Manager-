@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord, professorsData } from "../dummyData/data.js";
 import { 
@@ -12,16 +12,25 @@ import {
   Calendar,
   FileText,
   TrendingUp,
-  Award
+  Award,
+  Home,
+  Settings,
+  QrCode
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AppContext } from "../context/Appcontext";
 
 export default function Phome() {
   const navigate = useNavigate();
+  const { userData } = useContext(AppContext);
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [studentRoll, setStudentRoll] = useState("");
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
+
+  // Admin detection
+  const ADMIN_EMAIL = '123105080@nitkkr.ac.in';
+  const isAdmin = userData?.email === ADMIN_EMAIL;
 
   // Hardcoded professor email
   const professorEmail = "reddy.professor@nitkkr.ac.in";
@@ -175,7 +184,7 @@ export default function Phome() {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <motion.button
                 whileHover={{ 
                   scale: 1.02,
@@ -188,6 +197,20 @@ export default function Phome() {
                 <UserCheck className="h-5 w-5" />
                 <span>Add Attendance</span>
               </motion.button>
+
+              <motion.button
+                whileHover={{ 
+                  scale: 1.02,
+                  boxShadow: "0 0 30px rgba(138, 43, 226, 0.3)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/qr-generator")}
+                className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#8a2be2] to-[#9932cc] text-[#ffffff] font-semibold rounded-xl hover:from-[#9932cc] hover:to-[#7b68ee] transition-all duration-300 shadow-lg hover:shadow-[#8a2be2]/25"
+              >
+                <QrCode className="h-5 w-5" />
+                <span>QR Attendance</span>
+              </motion.button>
+              
               <motion.button
                 whileHover={{ 
                   scale: 1.02,
@@ -198,8 +221,24 @@ export default function Phome() {
                 className="flex items-center justify-center gap-3 px-6 py-4 bg-[#2a2a2a]/50 backdrop-blur-sm text-[#ffffff] font-semibold rounded-xl border border-[#444444]/50 hover:border-[#00e0ff]/50 transition-all duration-300"
               >
                 <ClipboardList className="h-5 w-5" />
-                <span>Review Attendance</span>
+                <span>View Students</span>
               </motion.button>
+
+              {/* Admin-only button to access student dashboard */}
+              {isAdmin && (
+                <motion.button
+                  whileHover={{ 
+                    scale: 1.02,
+                    boxShadow: "0 0 30px rgba(74, 222, 128, 0.3)"
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate("/home")}
+                  className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#4ade80] to-[#22c55e] text-[#0f0f0f] font-semibold rounded-xl hover:from-[#22c55e] hover:to-[#16a34a] transition-all duration-300 shadow-lg hover:shadow-[#4ade80]/25"
+                >
+                  <Home className="h-5 w-5" />
+                  <span>Student Dashboard</span>
+                </motion.button>
+              )}
             </div>
           </div>
         </motion.div>

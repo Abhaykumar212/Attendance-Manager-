@@ -12,7 +12,7 @@ export const AppContextProvider = ({ children }) => {
 
     const getUserData = async () => {
         try {
-            const { data } = await axios.get(`${backend_url}/api/students/me`);
+            const { data } = await axios.get(`${backend_url}/profile`);
             if (data.success) {
                 setUserData(data.user);
                 setIsLoggedIn(true);
@@ -27,9 +27,22 @@ export const AppContextProvider = ({ children }) => {
         }
     };
 
+    const logout = async () => {
+        try {
+            // Call logout endpoint to clear server-side cookie
+            await axios.post(`${backend_url}/logout`);
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            // Clear client-side state regardless of server response
+            setIsLoggedIn(false);
+            setUserData(null);
+        }
+    };
+
     useEffect(() => {
         getUserData(); 
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const value = {
         backend_url,
@@ -38,6 +51,7 @@ export const AppContextProvider = ({ children }) => {
         userData,
         setUserData,
         getUserData,
+        logout,
     };
 
     return (

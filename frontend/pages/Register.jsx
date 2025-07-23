@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, BookOpen, GraduationCap } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, BookOpen, GraduationCap, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/Appcontext';
 import toast from 'react-hot-toast';
@@ -12,13 +12,16 @@ export default function Register() {
   const [name, setName] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [isStudent, setIsStudent] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const { setIsLoggedIn, getUserData } = useContext(AppContext);
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
     try {
-      e.preventDefault();
       const backend_url = import.meta.env.VITE_BACKEND_URL;
       const userData = {
         name,
@@ -33,6 +36,7 @@ export default function Register() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(userData),
       });
 
@@ -59,6 +63,8 @@ export default function Register() {
       }
     } catch (error) {
       toast.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -249,15 +255,29 @@ export default function Register() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.5 }}
                 whileHover={{ 
-                  scale: 1.02,
-                  boxShadow: "0 0 30px rgba(0, 224, 255, 0.3)"
+                  scale: isLoading ? 1 : 1.02,
+                  boxShadow: isLoading ? "none" : "0 0 30px rgba(0, 224, 255, 0.3)"
                 }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: isLoading ? 1 : 0.95 }}
                 type="submit"
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] font-semibold rounded-xl hover:from-[#1ecbe1] hover:to-[#00ffd0] transition-all duration-300 shadow-lg hover:shadow-[#00e0ff]/25 group"
+                disabled={isLoading}
+                className={`w-full flex items-center justify-center gap-3 px-6 py-4 font-semibold rounded-xl transition-all duration-300 shadow-lg ${
+                  isLoading 
+                    ? 'bg-gradient-to-r from-[#666666] to-[#888888] text-[#cccccc] cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] hover:from-[#1ecbe1] hover:to-[#00ffd0] hover:shadow-[#00e0ff]/25 group'
+                }`}
               >
-                <span>Create Account</span>
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Creating Account...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Create Account</span>
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
               </motion.button>
             </form>
 

@@ -3,6 +3,11 @@ import {BrowserRouter as Router , Routes, Route} from "react-router-dom"
 import React from "react"
 import { Toaster } from "react-hot-toast";
 
+// import route protection components
+import ProtectedRoute from "../components/ProtectedRoute"
+import PublicRoute from "../components/PublicRoute"
+import RoleProtectedRoute from "../components/RoleProtectedRoute"
+
 //import pages
 import Register from "../pages/Register"
 import VerifyMail from "../pages/VerifyMail"
@@ -11,21 +16,73 @@ import Home from "../pages/Home"
 import Phome from "../pages/Phome"
 import Add_Attendacee from "../pages/Add_Attendance"
 import Landing from "../pages/Landing"
+import ForgotPassword from "../pages/ForgotPassword"
+import ResetPassword from "../pages/ResetPassword"
+import QRGenerator from "../pages/QRGenerator"
+import QRScanner from "../pages/QRScanner"
 
 export default function App(){
     return (
         <Router>
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
-
-                <Route path="/home" element={<Home/>}></Route>
+                {/* Public routes - accessible to everyone */}
                 <Route path="/" element={<Landing />} />
-                <Route path="/*" element={<Home />} />
-                <Route path="/phome" element={<Phome/>}></Route>
-                <Route path="/register" element={<Register/>} />
                 <Route path="/verifymail" element={<VerifyMail/>} />
-                <Route path="/login" element={<Login/>} />
-                <Route path="/add-attendance" element={<Add_Attendacee/>} />
+                
+                {/* Public routes - only accessible when NOT logged in */}
+                <Route path="/register" element={
+                    <PublicRoute>
+                        <Register/>
+                    </PublicRoute>
+                } />
+                <Route path="/login" element={
+                    <PublicRoute>
+                        <Login/>
+                    </PublicRoute>
+                } />
+                <Route path="/forgot-password" element={
+                    <PublicRoute>
+                        <ForgotPassword/>
+                    </PublicRoute>
+                } />
+                <Route path="/reset-password" element={
+                    <PublicRoute>
+                        <ResetPassword/>
+                    </PublicRoute>
+                } />
+                
+                {/* Professor-only routes (admin can also access) */}
+                <Route path="/phome" element={
+                    <RoleProtectedRoute allowedRoles={['professor', 'admin']}>
+                        <Phome/>
+                    </RoleProtectedRoute>
+                } />
+                <Route path="/add-attendance" element={
+                    <RoleProtectedRoute allowedRoles={['professor', 'admin']}>
+                        <Add_Attendacee/>
+                    </RoleProtectedRoute>
+                } />
+                <Route path="/qr-generator" element={
+                    <RoleProtectedRoute allowedRoles={['professor', 'admin']}>
+                        <QRGenerator/>
+                    </RoleProtectedRoute>
+                } />
+                
+                {/* Student-only routes (admin can also access) */}
+                <Route path="/home" element={
+                    <RoleProtectedRoute allowedRoles={['student', 'admin']}>
+                        <Home/>
+                    </RoleProtectedRoute>
+                } />
+                <Route path="/qr-scanner" element={
+                    <RoleProtectedRoute allowedRoles={['student', 'admin']}>
+                        <QRScanner/>
+                    </RoleProtectedRoute>
+                } />
+                
+                {/* Catch all route - redirect based on role */}
+                <Route path="/*" element={<Landing />} />
             </Routes>
         </Router>
     )

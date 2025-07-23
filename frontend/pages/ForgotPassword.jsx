@@ -1,34 +1,14 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { AppContext } from '../context/Appcontext';
+import { Mail, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const { setIsLoggedIn, getUserData } = useContext(AppContext);
-
-  // Helper function to determine redirect URL based on user email
-  const getRedirectUrl = (email) => {
-    const ADMIN_EMAIL = '123105080@nitkkr.ac.in';
-    
-    if (email === ADMIN_EMAIL) return '/home'; // Admin goes to professor dashboard
-    
-    // Check if email starts with numbers (student)
-    if (/^\d+@nitkkr\.ac\.in$/.test(email)) return '/home';
-    
-    // Email doesn't start with numbers but ends with nitkkr.ac.in (professor)
-    if (/^[a-zA-Z][^@]*@nitkkr\.ac\.in$/.test(email)) return '/phome';
-    
-    return '/home'; // default
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,45 +16,14 @@ export default function Login() {
     
     try {
       const backend_url = import.meta.env.VITE_BACKEND_URL;
-      const { data } = await axios.post(`${backend_url}/login`, { email, password });
+      const { data } = await axios.post(`${backend_url}/forgot-password`, { email });
 
-      if (!data.error) {
-        setIsLoggedIn(true);
-        getUserData();
-        toast.success('Welcome back!');
-        
-        // Get role-based redirect URL
-        const roleBasedUrl = getRedirectUrl(email);
-        
-        // Check if user was trying to access a specific page
-        const intendedUrl = location.state?.from?.pathname;
-        
-        // If they were trying to access a specific page, validate if they can access it
-        let finalRedirectUrl = roleBasedUrl;
-        
-        if (intendedUrl && intendedUrl !== '/login') {
-          // Allow admin to access any page
-          if (email === '123105080@nitkkr.ac.in') {
-            finalRedirectUrl = intendedUrl;
-          } else {
-            // For students and professors, check if the intended URL matches their allowed pages
-            const isStudent = /^\d+@nitkkr\.ac\.in$/.test(email);
-            const studentPages = ['/home'];
-            const professorPages = ['/phome', '/add-attendance'];
-            
-            if (isStudent && studentPages.some(page => intendedUrl.startsWith(page))) {
-              finalRedirectUrl = intendedUrl;
-            } else if (!isStudent && professorPages.some(page => intendedUrl.startsWith(page))) {
-              finalRedirectUrl = intendedUrl;
-            }
-            // Otherwise, use role-based default
-          }
-        }
-        
-        navigate(finalRedirectUrl);
+      if (data.success) {
+        toast.success('Password reset OTP sent to your email!');
+        navigate('/reset-password', { state: { email } });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
+      toast.error(error.response?.data?.error || 'Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +71,7 @@ export default function Login() {
         ))}
       </div>
 
-      {/* Glassmorphism Login Card */}
+      {/* Glassmorphism Card */}
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -138,6 +87,18 @@ export default function Login() {
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-[#1ecbe1]/10 rounded-full blur-3xl" />
 
           <div className="relative z-10">
+            {/* Back Button */}
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              onClick={() => navigate('/login')}
+              className="mb-6 flex items-center gap-2 text-[#aaaaaa] hover:text-[#00e0ff] transition-colors duration-200"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Login</span>
+            </motion.button>
+
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -145,10 +106,10 @@ export default function Login() {
               className="text-center mb-8"
             >
               <h1 className="text-4xl font-bold bg-gradient-to-r from-[#ffffff] to-[#eaeaea] bg-clip-text text-transparent mb-3">
-                Welcome Back
+                Forgot Password?
               </h1>
               <p className="text-[#aaaaaa] text-lg">
-                Sign in to access your student dashboard
+                Enter your email to receive a password reset OTP
               </p>
             </motion.div>
 
@@ -175,41 +136,10 @@ export default function Login() {
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <label htmlFor="password" className="block text-[#aaaaaa] font-medium">
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/forgot-password')}
-                    className="text-sm text-[#00e0ff] hover:text-[#1ecbe1] transition-colors duration-200"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666666] h-5 w-5 transition-colors group-focus-within:text-[#00e0ff]" />
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Enter your password"
-                    className="w-full pl-12 pr-4 py-4 bg-[#2a2a2a]/50 border border-[#444444]/50 rounded-xl text-[#ffffff] placeholder-[#666666] focus:outline-none focus:ring-2 focus:ring-[#00e0ff]/50 focus:border-[#00e0ff]/50 transition-all duration-300 backdrop-blur-sm"
-                  />
-                </div>
-              </motion.div>
-
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
                 whileHover={{ 
                   scale: isLoading ? 1 : 1.02,
                   boxShadow: isLoading ? "none" : "0 0 30px rgba(0, 224, 255, 0.3)"
@@ -226,11 +156,11 @@ export default function Login() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Signing In...</span>
+                    <span>Sending OTP...</span>
                   </>
                 ) : (
                   <>
-                    <span>Sign In</span>
+                    <span>Send Reset OTP</span>
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </>
                 )}
@@ -240,18 +170,18 @@ export default function Login() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
               className="text-center mt-8 pt-6 border-t border-[#333333]/50"
             >
-              <span className="text-[#aaaaaa]">
-                Don't have an account?{' '}
+              <p className="text-[#aaaaaa] text-sm">
+                Remember your password?{' '}
                 <button
-                  onClick={() => navigate('/register')}
+                  onClick={() => navigate('/login')}
                   className="text-[#00e0ff] hover:text-[#1ecbe1] font-medium transition-colors duration-200"
                 >
-                  Register here
+                  Sign in here
                 </button>
-              </span>
+              </p>
             </motion.div>
           </div>
         </div>

@@ -25,6 +25,12 @@ const studentSchema = new mongoose.Schema({
     verifyOTPExpireAt: {
         type: Number,
     },
+    resetPasswordOTP: {
+        type: String,
+    },
+    resetPasswordOTPExpireAt: {
+        type: Number,
+    },
     isAccountVerified: {
         type: Boolean,
         default: false,
