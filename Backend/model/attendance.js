@@ -9,10 +9,19 @@ const attendanceSchema = new Schema({
         required: true,
         type: Number
     },
+    studentEmail: {
+        type: String
+    },
+    studentName: {
+        type: String
+    },
+    rollNo: {
+        type: Number
+    },
     status : {
         required: true,
         type: String,
-        enum: ['present', 'absent']
+        enum: ['present', 'absent', 'Present', 'Absent']
     },
     date : {
         required: true,
@@ -24,6 +33,9 @@ const attendanceSchema = new Schema({
     },
     subjectCode : {
         required: true,
+        type: String
+    },
+    className: {
         type: String
     },
     day : {
@@ -38,6 +50,17 @@ const attendanceSchema = new Schema({
         required: true,
         type:Number 
     },
+    markedVia: {
+        type: String,
+        enum: ['Manual', 'QR'],
+        default: 'Manual'
+    },
+    sessionId: {
+        type: String
+    },
+    location: {
+        type: String
+    }
 }, {timestamps: true})
 
 const attendanceModel = model('Attendance', attendanceSchema);

@@ -16,7 +16,13 @@ const ProfSchema = new mongoose.Schema({
     verifyOTP: {
         type: String,
     },
-    verifyOTPExpieredAt: {
+    verifyOTPExpireAt: {
+        type: Number,
+    },
+    resetPasswordOTP: {
+        type: String,
+    },
+    resetPasswordOTPExpireAt: {
         type: Number,
     },
     isAccountVerified: {

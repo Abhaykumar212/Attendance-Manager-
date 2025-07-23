@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LogIn,
@@ -18,11 +18,31 @@ import {
     TrendingUp,
     Users,
     CheckCircle2,
+    LogOut,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AppContext } from '../context/Appcontext';
 
 export default function Landing() {
     const [activeFeature, setActiveFeature] = useState(0);
+    const { isLoggedIn, userData, logout } = useContext(AppContext);
+    const navigate = useNavigate();
+
+    // Admin email
+    const ADMIN_EMAIL = '123105080@nitkkr.ac.in';
+
+    // Helper functions to determine user type
+    const isAdmin = userData?.email === ADMIN_EMAIL;
+    const isStudent = userData?.email && /^\d+@nitkkr\.ac\.in$/.test(userData.email);
+    const isProfessor = userData?.email && /^[a-zA-Z][^@]*@nitkkr\.ac\.in$/.test(userData.email);
+
+    // Function to get appropriate dashboard URL
+    const getDashboardUrl = () => {
+        if (isAdmin) return '/phome'; // Admin can access professor dashboard with all features
+        if (isStudent) return '/home';
+        if (isProfessor) return '/phome';
+        return '/home'; // default
+    };
 
     const features = [
         {
@@ -113,21 +133,48 @@ export default function Landing() {
                         </motion.div>
                         
                         <div className="flex items-center gap-4">
-                            <Link
-                                to="/login"
-                                className="flex items-center gap-2 px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-[#2d2d2d] text-[#eaeaea] rounded-xl font-medium hover:bg-[#1e1e1e]/80 hover:border-[#00e0ff]/30 transition-all duration-300"
-                            >
-                                <LogIn className="w-4 h-4" />
-                                <span className="hidden sm:inline">Login</span>
-                            </Link>
-                            
-                            <Link
-                                to="/register"
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] rounded-xl font-semibold shadow-lg shadow-[#00e0ff]/20 hover:shadow-[#00e0ff]/40 transition-all duration-300"
-                            >
-                                <UserPlus className="w-4 h-4" />
-                                <span className="hidden sm:inline">Register</span>
-                            </Link>
+                            {isLoggedIn ? (
+                                <>
+                                    <Link
+                                        to={getDashboardUrl()}
+                                        className="flex items-center gap-2 px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-[#2d2d2d] text-[#eaeaea] rounded-xl font-medium hover:bg-[#1e1e1e]/80 hover:border-[#00e0ff]/30 transition-all duration-300"
+                                    >
+                                        <BookOpen className="w-4 h-4" />
+                                        <span className="hidden sm:inline">
+                                            {isAdmin ? 'Admin Panel' : isStudent ? 'My Attendance' : 'Dashboard'}
+                                        </span>
+                                    </Link>
+                                    
+                                    <button
+                                        onClick={() => {
+                                            logout();
+                                            navigate('/');
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#ff4444] to-[#cc3333] text-white rounded-xl font-semibold shadow-lg hover:shadow-lg transition-all duration-300"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Logout</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <Link
+                                        to="/login"
+                                        className="flex items-center gap-2 px-4 py-2 bg-[#1e1e1e]/60 backdrop-blur-sm border border-[#2d2d2d] text-[#eaeaea] rounded-xl font-medium hover:bg-[#1e1e1e]/80 hover:border-[#00e0ff]/30 transition-all duration-300"
+                                    >
+                                        <LogIn className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Login</span>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/register"
+                                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] rounded-xl font-semibold shadow-lg shadow-[#00e0ff]/20 hover:shadow-[#00e0ff]/40 transition-all duration-300"
+                                    >
+                                        <UserPlus className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Register</span>
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -197,26 +244,41 @@ export default function Landing() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Link
-                                to="/login"
-                                className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] rounded-xl font-semibold shadow-2xl shadow-[#00e0ff]/20 hover:shadow-[#00e0ff]/40 transition-all duration-300"
-                            >
-                                <LogIn className="h-5 w-5" />
-                                Get Started
-                                <ArrowRight className="h-5 w-5" />
-                            </Link>
-                        </motion.div>
+                        {isLoggedIn ? (
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <Link
+                                    to={getDashboardUrl()}
+                                    className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] rounded-xl font-semibold shadow-2xl shadow-[#00e0ff]/20 hover:shadow-[#00e0ff]/40 transition-all duration-300"
+                                >
+                                    <BookOpen className="h-5 w-5" />
+                                    {isAdmin ? 'Go to Admin Panel' : isStudent ? 'View My Attendance' : 'Go to Dashboard'}
+                                    <ArrowRight className="h-5 w-5" />
+                                </Link>
+                            </motion.div>
+                        ) : (
+                            <>
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Link
+                                        to="/login"
+                                        className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#00e0ff] to-[#1ecbe1] text-[#0f0f0f] rounded-xl font-semibold shadow-2xl shadow-[#00e0ff]/20 hover:shadow-[#00e0ff]/40 transition-all duration-300"
+                                    >
+                                        <LogIn className="h-5 w-5" />
+                                        Get Started
+                                        <ArrowRight className="h-5 w-5" />
+                                    </Link>
+                                </motion.div>
 
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Link
-                                to="/register"
-                                className="flex items-center gap-3 px-8 py-4 bg-[#1e1e1e]/60 backdrop-blur-xl border border-[#2d2d2d] text-[#eaeaea] rounded-xl font-semibold hover:bg-[#1e1e1e]/80 hover:border-[#00e0ff]/30 transition-all duration-300"
-                            >
-                                <UserPlus className="h-5 w-5" />
-                                Create Account
-                            </Link>
-                        </motion.div>
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Link
+                                        to="/register"
+                                        className="flex items-center gap-3 px-8 py-4 bg-[#1e1e1e]/60 backdrop-blur-xl border border-[#2d2d2d] text-[#eaeaea] rounded-xl font-semibold hover:bg-[#1e1e1e]/80 hover:border-[#00e0ff]/30 transition-all duration-300"
+                                    >
+                                        <UserPlus className="h-5 w-5" />
+                                        Create Account
+                                    </Link>
+                                </motion.div>
+                            </>
+                        )}
                     </div>
 
                     {/* Stats Section */}

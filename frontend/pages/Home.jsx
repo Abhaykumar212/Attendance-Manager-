@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from "react";
-import { Search, BookOpen, X, BarChart2, Bell, Download, Zap, TrendingUp, Clock, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import React, { useMemo, useState, useContext } from "react";
+import { Search, BookOpen, X, BarChart2, Bell, Download, Zap, TrendingUp, Clock, Users, CheckCircle2, AlertCircle, Settings, QrCode } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord } from "../dummyData/data.js";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 import axios from "axios";
+import { AppContext } from "../context/Appcontext";
+import { useNavigate } from "react-router-dom";
 
 // Custom tooltip component for the PieChart
 const CustomTooltip = ({ active, payload }) => {
@@ -31,6 +33,8 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function Home() {
+  const navigate = useNavigate();
+  const { userData } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -38,6 +42,10 @@ export default function Home() {
   const [notification, setNotification] = useState("");
   const [notifLoading, setNotifLoading] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
+
+  // Admin detection
+  const ADMIN_EMAIL = '123105080@nitkkr.ac.in';
+  const isAdmin = userData?.email === ADMIN_EMAIL;
 
   const studentData = attendanceRecord[0];
   const backend_url = import.meta.env.VITE_BACKEND_URL;
@@ -302,6 +310,19 @@ export default function Home() {
             </div>
             
             <div className="flex items-center gap-4">
+              {/* Admin-only button to access professor dashboard */}
+              {isAdmin && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate("/phome")}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#4ade80] to-[#22c55e] text-[#0f0f0f] rounded-xl font-semibold shadow-lg shadow-[#4ade80]/20 hover:shadow-[#4ade80]/40 transition-all duration-300"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin Panel</span>
+                </motion.button>
+              )}
+              
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -404,6 +425,48 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
+
+        {/* Quick Actions Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="mb-8"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.button
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: "0 0 30px rgba(138, 43, 226, 0.3)"
+              }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate("/qr-scanner")}
+              className="flex items-center justify-center gap-4 px-6 py-4 bg-gradient-to-r from-[#8a2be2] to-[#9932cc] text-[#ffffff] font-semibold rounded-xl hover:from-[#9932cc] hover:to-[#7b68ee] transition-all duration-300 shadow-lg hover:shadow-[#8a2be2]/25"
+            >
+              <QrCode className="h-6 w-6" />
+              <div className="text-left">
+                <div className="text-lg font-bold">Scan QR Code</div>
+                <div className="text-sm opacity-90">Mark attendance instantly</div>
+              </div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ 
+                scale: 1.02,
+                backgroundColor: "rgba(51, 51, 51, 0.8)"
+              }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowNotifModal(true)}
+              className="flex items-center justify-center gap-4 px-6 py-4 bg-[#2a2a2a]/50 backdrop-blur-sm text-[#ffffff] font-semibold rounded-xl border border-[#444444]/50 hover:border-[#00e0ff]/50 transition-all duration-300"
+            >
+              <Bell className="h-6 w-6 text-[#00e0ff]" />
+              <div className="text-left">
+                <div className="text-lg font-bold">Notifications</div>
+                <div className="text-sm text-[#aaaaaa]">AI-powered insights</div>
+              </div>
+            </motion.button>
+          </div>
+        </motion.div>
 
         {/* Subject Cards - Asymmetric Grid */}
         <motion.div

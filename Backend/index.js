@@ -40,6 +40,7 @@ const studentRoute = require('./router/studentRoute');
 const subjectRoute = require('./router/subjectRoute');
 const notificationRoutes = require('./router/notifications');
 const attendanceRoutes = require('./router/attendanceRoutes');
+const qrAttendanceRoutes = require('./router/qrAttendanceRoutes');
 
 app.use('/', userRoutes);
 app.use('/', dataRoutes);
@@ -47,6 +48,7 @@ app.use('/api/students', studentRoute);
 app.use('/', subjectRoute);
 app.use('/api/notifications', notificationRoutes);
 app.use('/', attendanceRoutes);
+app.use('/api/qr-attendance', qrAttendanceRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
