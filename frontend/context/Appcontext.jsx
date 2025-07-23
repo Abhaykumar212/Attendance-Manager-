@@ -14,9 +14,9 @@ export const AppContextProvider = ({ children }) => {
     const [userData, setUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Debug production issues on mount
+    // Debug production issues on mount (only in development)
     useEffect(() => {
-        if (import.meta.env.PROD) {
+        if (import.meta.env.DEV) {
             debugProdIssues();
         }
     }, []);
@@ -38,22 +38,28 @@ export const AppContextProvider = ({ children }) => {
             if (data.success) {
                 setUserData(data.user);
                 setIsLoggedIn(true);
-                console.log('User data fetched successfully:', data.user.role);
+                if (import.meta.env.DEV) {
+                    console.log('User data fetched successfully:', data.user.role);
+                }
             } else {
                 setIsLoggedIn(false);
                 setUserData(null);
-                console.log('No user data returned');
+                if (import.meta.env.DEV) {
+                    console.log('No user data returned');
+                }
             }
         } catch (error) {
             logApiResponse(`${backend_url}/profile`, error?.response?.status || 'ERROR', error?.response?.data);
             setIsLoggedIn(false);
             setUserData(null);
-            console.error("Error fetching user:", {
-                message: error.message,
-                status: error?.response?.status,
-                data: error?.response?.data,
-                url: error?.config?.url
-            });
+            if (import.meta.env.DEV) {
+                console.error("Error fetching user:", {
+                    message: error.message,
+                    status: error?.response?.status,
+                    data: error?.response?.data,
+                    url: error?.config?.url
+                });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -71,7 +77,9 @@ export const AppContextProvider = ({ children }) => {
             
             logApiResponse(`${backend_url}/logout`, response.status, response.data);
         } catch (error) {
-            console.error("Logout error:", error);
+            if (import.meta.env.DEV) {
+                console.error("Logout error:", error);
+            }
         } finally {
             // Clear client-side state regardless of server response
             setIsLoggedIn(false);

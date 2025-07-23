@@ -1,6 +1,10 @@
-// Frontend production debugging helpers
+// Frontend production debugging helpers - only logs in development
+
+const isDev = import.meta.env.DEV;
 
 export const debugProdIssues = () => {
+    if (!isDev) return;
+    
     console.log('🔧 Frontend Debug Info:');
     console.log('- Environment:', import.meta.env.MODE);
     console.log('- Backend URL:', import.meta.env.VITE_BACKEND_URL);
@@ -18,6 +22,8 @@ export const debugProdIssues = () => {
 };
 
 export const logApiCall = (url, method, data) => {
+    if (!isDev) return;
+    
     console.log(`📡 API Call: ${method} ${url}`);
     if (data) {
         console.log('- Data:', data);
@@ -26,12 +32,16 @@ export const logApiCall = (url, method, data) => {
 };
 
 export const logApiResponse = (url, status, data) => {
+    if (!isDev) return;
+    
     console.log(`📥 API Response: ${status} ${url}`);
     console.log('- Data:', data);
     console.log('- Timestamp:', new Date().toISOString());
 };
 
 export const checkCors = async (backendUrl) => {
+    if (!isDev) return true;
+    
     try {
         console.log('🌐 CORS Check...');
         const response = await fetch(`${backendUrl}/profile`, {
