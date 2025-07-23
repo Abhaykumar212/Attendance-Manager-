@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('../services/mailservice');
 const { getCookieConfig } = require('../config/production');
+const logger = require('../utils/logger');
 
 const sendVerificationOTP = async (req, res, sendResponse = true, email, name, role) => {
   try {
@@ -40,7 +41,7 @@ const sendVerificationOTP = async (req, res, sendResponse = true, email, name, r
       return res.json({ message: "OTP sent to your email", success: true });
     }
   } catch (err) {
-    console.error('OTP Send Error:', err);
+    logger.error('OTP Send Error:', err.message);
     if (sendResponse) {
       return res.status(500).json({ error: 'Failed to send verification email' });
     }
@@ -173,14 +174,14 @@ const register = async (req, res) => {
 
 
     transporter.sendMail(welcomeMessage).catch((err) => {
-      console.error('Welcome email failed:', err.message);
+      logger.error('Welcome email failed:', err.message);
     });
 
     await sendVerificationOTP(req, res, false, email, name, role);
     return res.status(202).json({ success: true, message: "Successful registration" });
 
   } catch (err) {
-    console.error('Register error:', err);
+    logger.error('Register error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -206,7 +207,7 @@ const login = async (req, res) => {
     return res.status(200).json({ message: 'Login successful' });
 
   } catch (err) {
-    console.error('Login error:', err);
+    logger.error('Login error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -241,7 +242,7 @@ const verifyemail = async (req, res) => {
 
     return res.status(200).json({ message: 'Account verified successfully', success: true });
   } catch (err) {
-    console.error('Verification error:', err);
+    logger.error('Verification error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -261,7 +262,7 @@ const getUserProfile = async (req, res) => {
       user: userProfile 
     });
   } catch (err) {
-    console.error('Get profile error:', err);
+    logger.error('Get profile error:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 };
@@ -271,7 +272,7 @@ const logout = async (req, res) => {
     res.clearCookie('token', getCookieConfig());
     return res.status(200).json({ message: 'Logout successful', success: true });
   } catch (err) {
-    console.error('Logout error:', err);
+    logger.error('Logout error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -343,7 +344,7 @@ const sendPasswordResetOTP = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Password reset OTP error:', err);
+    logger.error('Password reset OTP error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to send password reset email' });
   }
 };
@@ -412,7 +413,7 @@ const resetPassword = async (req, res) => {
     };
 
     transporter.sendMail(confirmationMessage).catch((err) => {
-      console.error('Confirmation email failed:', err.message);
+      logger.error('Confirmation email failed:', err.message);
     });
 
     res.status(200).json({ 
@@ -421,7 +422,7 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Reset password error:', err);
+    logger.error('Reset password error:', err.message);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
@@ -437,7 +438,7 @@ const attendanceStoreInDB = async (req, res) => {
     const saved = await attendanceModel.insertMany(records);
     return res.status(201).json(saved);
   } catch (error) {
-    console.error('Error storing attendance:', error);
+    logger.error('Error storing attendance:', error.message);
     res.status(500).json({ error: 'Server error while saving attendance' });
   }
 };

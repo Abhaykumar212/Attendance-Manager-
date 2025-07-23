@@ -8,6 +8,7 @@ require('dotenv').config();
 
 // Import production helpers
 const { checkEnvironment } = require('./config/production');
+const logger = require('./utils/logger');
 
 // Check environment on startup
 checkEnvironment();
@@ -32,7 +33,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      console.error('Blocked by CORS:', origin);
+      logger.error('Blocked by CORS:', origin);
       return callback(new Error('CORS not allowed from this origin'), false);
     }
   },
@@ -71,9 +72,9 @@ const server = require('http').createServer(app);
 connectDB()
   .then(() => {
     server.listen(port, () => {
-      console.log(`✅ Server listening on port ${port}`);
+      logger.info(`✅ Server listening on port ${port}`);
     });
   })
   .catch(err => {
-    console.error('❌ MongoDB connection failed:', err);
+    logger.error('❌ MongoDB connection failed:', err.message);
   });

@@ -1,24 +1,32 @@
 // Production-specific configurations and debugging helpers
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 const checkEnvironment = () => {
     const isProduction = process.env.NODE_ENV === 'production';
     
-    console.log('🔧 Environment Check:');
-    console.log('- NODE_ENV:', process.env.NODE_ENV || 'undefined');
-    console.log('- Is Production:', isProduction);
-    console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Missing');
-    console.log('- PORT:', process.env.PORT || 'undefined');
+    if (isDevelopment) {
+        console.log('🔧 Environment Check:');
+        console.log('- NODE_ENV:', process.env.NODE_ENV || 'undefined');
+        console.log('- Is Production:', isProduction);
+        console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Missing');
+        console.log('- PORT:', process.env.PORT || 'undefined');
+    }
     
     // Check required environment variables
     const requiredVars = ['JWT_SECRET'];
     const missingVars = requiredVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
-        console.error('❌ Missing required environment variables:', missingVars);
+        if (isDevelopment) {
+            console.error('❌ Missing required environment variables:', missingVars);
+        }
         return false;
     }
     
-    console.log('✅ All required environment variables are set');
+    if (isDevelopment) {
+        console.log('✅ All required environment variables are set');
+    }
     return true;
 };
 
@@ -35,6 +43,8 @@ const getCookieConfig = () => {
 };
 
 const logCookieDebug = (req, action = 'check') => {
+    if (!isDevelopment) return;
+    
     console.log(`🍪 Cookie Debug (${action}):`);
     console.log('- All cookies:', Object.keys(req.cookies || {}));
     console.log('- Token cookie present:', !!req.cookies?.token);
