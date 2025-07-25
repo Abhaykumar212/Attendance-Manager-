@@ -18,8 +18,6 @@ import Add_Attendacee from "../pages/Add_Attendance"
 import Landing from "../pages/Landing"
 import ForgotPassword from "../pages/ForgotPassword"
 import ResetPassword from "../pages/ResetPassword"
-import QRGenerator from "../pages/QRGenerator"
-import QRScanner from "../pages/QRScanner"
 
 export default function App(){
     return (
@@ -63,21 +61,11 @@ export default function App(){
                         <Add_Attendacee/>
                     </RoleProtectedRoute>
                 } />
-                <Route path="/qr-generator" element={
-                    <RoleProtectedRoute allowedRoles={['professor', 'admin']}>
-                        <QRGenerator/>
-                    </RoleProtectedRoute>
-                } />
                 
                 {/* Student-only routes (admin can also access) */}
                 <Route path="/home" element={
                     <RoleProtectedRoute allowedRoles={['student', 'admin']}>
                         <Home/>
-                    </RoleProtectedRoute>
-                } />
-                <Route path="/qr-scanner" element={
-                    <RoleProtectedRoute allowedRoles={['student', 'admin']}>
-                        <QRScanner/>
                     </RoleProtectedRoute>
                 } />
                 

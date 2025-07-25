@@ -14,8 +14,7 @@ import {
   TrendingUp,
   Award,
   Home,
-  Settings,
-  QrCode
+  Settings
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/Appcontext";
@@ -184,7 +183,7 @@ export default function Phome() {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <motion.button
                 whileHover={{ 
                   scale: 1.02,
@@ -196,19 +195,6 @@ export default function Phome() {
               >
                 <UserCheck className="h-5 w-5" />
                 <span>Add Attendance</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ 
-                  scale: 1.02,
-                  boxShadow: "0 0 30px rgba(138, 43, 226, 0.3)"
-                }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/qr-generator")}
-                className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[#8a2be2] to-[#9932cc] text-[#ffffff] font-semibold rounded-xl hover:from-[#9932cc] hover:to-[#7b68ee] transition-all duration-300 shadow-lg hover:shadow-[#8a2be2]/25"
-              >
-                <QrCode className="h-5 w-5" />
-                <span>QR Attendance</span>
               </motion.button>
               
               <motion.button

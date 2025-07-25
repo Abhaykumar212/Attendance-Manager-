@@ -52,7 +52,7 @@ const attendanceSchema = new Schema({
     },
     markedVia: {
         type: String,
-        enum: ['Manual', 'QR'],
+        enum: ['Manual'],
         default: 'Manual'
     },
     sessionId: {

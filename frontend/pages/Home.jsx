@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useContext } from "react";
-import { Search, BookOpen, X, BarChart2, Bell, Download, Zap, TrendingUp, Clock, Users, CheckCircle2, AlertCircle, Settings, QrCode } from "lucide-react";
+import { Search, BookOpen, X, BarChart2, Bell, Download, Zap, TrendingUp, Clock, Users, CheckCircle2, AlertCircle, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { attendanceRecord } from "../dummyData/data.js";
 import jsPDF from "jspdf";
@@ -427,29 +427,13 @@ export default function Home() {
         </div>
 
         {/* Quick Actions Section */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mb-8"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.button
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: "0 0 30px rgba(138, 43, 226, 0.3)"
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate("/qr-scanner")}
-              className="flex items-center justify-center gap-4 px-6 py-4 bg-gradient-to-r from-[#8a2be2] to-[#9932cc] text-[#ffffff] font-semibold rounded-xl hover:from-[#9932cc] hover:to-[#7b68ee] transition-all duration-300 shadow-lg hover:shadow-[#8a2be2]/25"
-            >
-              <QrCode className="h-6 w-6" />
-              <div className="text-left">
-                <div className="text-lg font-bold">Scan QR Code</div>
-                <div className="text-sm opacity-90">Mark attendance instantly</div>
-              </div>
-            </motion.button>
-
+        // > */}
+          {/* </div>{ <div className="grid grid-cols-1 gap-4">
             <motion.button
               whileHover={{ 
                 scale: 1.02,
@@ -458,9 +442,9 @@ export default function Home() {
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowNotifModal(true)}
               className="flex items-center justify-center gap-4 px-6 py-4 bg-[#2a2a2a]/50 backdrop-blur-sm text-[#ffffff] font-semibold rounded-xl border border-[#444444]/50 hover:border-[#00e0ff]/50 transition-all duration-300"
-            >
-              <Bell className="h-6 w-6 text-[#00e0ff]" />
-              <div className="text-left">
+            > */}
+              {/* <Bell className="h-6 w-6 text-[#00e0ff]" /> */}
+              {/* <div className="text-left">
                 <div className="text-lg font-bold">Notifications</div>
                 <div className="text-sm text-[#aaaaaa]">AI-powered insights</div>
               </div>
